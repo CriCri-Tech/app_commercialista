@@ -1,18 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 class Autenticazione {
   // Istanze di autenticazione di Firebase
   final FirebaseAuth _istanza = FirebaseAuth.instance;
 
-  // Lettura dell'utente tramite un getter
-  User? get utenteCorrente => _istanza.currentUser;
+  // Lettura dell'utente tramite un getter (può essere null se non c'è un utente autenticato)
+  User ? get utenteCorrente => _istanza.currentUser;
 
   // Database
   final FirebaseFirestore _database = FirebaseFirestore.instance;
 
-  // Stato dell'autenticazione
-  Stream<User?> get statoAutenticazione => _istanza.authStateChanges();
+  // Stato dell'autenticazione (può essere null se non c'è un utente autenticato)
+  Stream < User ? > get statoAutenticazione => _istanza.authStateChanges();
 
   // RF-00 SIGN IN
   Future < UserCredential ? > effettuaRegistrazione({
@@ -27,52 +28,57 @@ class Autenticazione {
 
   ) async {
     try {
-      // Tenta la creazione dell'account su Firebase Auth
-      UserCredential credenziali = await _istanza.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      // Crea l'utente nel sistema di Autenticazione (credenziali sicure)
+      UserCredential credenziali = await _istanza.createUserWithEmailAndPassword(email: email,password: password,);
 
-      User? nuovoUtente = credenziali.user;
+      // Variabile che contiene il nuovo utente
+      User ? nuovoUtente = credenziali.user;
 
       if (nuovoUtente != null) {
-        // Aggiorna il profilo dell'utente con Nome e Cognome
+        // Aggiorna il nome di base in Auth
         await nuovoUtente.updateDisplayName("$nome $cognome");
 
         // Salva i dati anagrafici e di ruolo nel database        
         // Creazione di un documento con ID uguale all'UID dell'utente per una facile associazione tra Auth e Firestore
         await _database.collection('utenti').doc(nuovoUtente.uid).set({
-          'nome': nome,
-          'cognome': cognome,
-          'username': username, 
-          'email': email,
-          'dataDiNascita': dataDiNascita.toIso8601String(),
-          'ruolo': ruolo,
-          'dataCreazione': FieldValue.serverTimestamp(),
-        });
+            'nome': nome,
+            'cognome': cognome,
+            'email': email,
+            // Conversione della data di nascita come stringa
+            'dataDiNascita': dataDiNascita.toIso8601String(),
+            'ruolo': ruolo,
+            // Salvataggio della data di creazione dell'account 
+            'dataCreazione': FieldValue.serverTimestamp(),
+          }
+
+        );
+
+        debugPrint("Registrazione completata. Utente: ${nuovoUtente.email} | Ruolo: $ruolo");
       }
       return credenziali;
     }
     on FirebaseAuthException catch (errore) {
       // Gestione degli errori specifici di Firebase Auth
       if (errore.code == 'weak-password') {
-        throw Exception('La password fornita è troppo debole (minimo 6 caratteri).');
+        debugPrint('La password fornita è troppo debole (minimo 6 caratteri).');
       } else if (errore.code == 'email-already-in-use') {
-        throw Exception('Esiste già un account registrato con questa email.');
+        debugPrint('Esiste già un account registrato con questa email.');
       } else if (errore.code == 'invalid-email') {
-        throw Exception('Il formato dell\'email non è valido.');
+        debugPrint('Il formato dell\'email non è valido.');
       } else {
-        throw Exception('Errore durante la registrazione: ${errore.message}');
+        // Errore generico per altri casi 
+        debugPrint('Errore durante la registrazione: ${errore.message}');
       }
+      rethrow;
     } catch (errore) {
-      throw Exception('Errore imprevisto durante il salvataggio dei dati del profilo.');
+      // Cattura qualsiasi altro errore (es. problemi di connessione al database)
+      debugPrint('Errore imprevisto durante la registrazione: $errore');
+      rethrow;
     }
   }
 
-  
   // RF-01 LOGIN
-  
-  Future<UserCredential> effettuaLogin(String emailUtente, String passwordUtente) async {
+  Future < UserCredential ? > effettuaLogin(String emailUtente, String passwordUtente) async {
     try {
       // Legge email e password e tenta di effettuare il login con Firebase Authentication
       UserCredential credenziali = await _istanza.signInWithEmailAndPassword(email: emailUtente, password: passwordUtente);
@@ -82,34 +88,33 @@ class Autenticazione {
     on FirebaseAuthException catch (errore) {
       // Errore nel caso in cui l'email non è registrata o è inserita male
       if (errore.code == 'user-not-found' || errore.code == 'invalid-email') {
-        throw Exception('Nessun account trovato con questa email.');
-      } else if (errore.code == 'wrong-password' || errore.code == 'invalid-credential') {
-        throw Exception('La password o l\'email inserita è errata.');
-      } else {
-        throw Exception('Errore durante il tentativo di accesso: ${errore.message}');
+        debugPrint('Nessun account trovato con questa email.'); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       }
-    } catch (errore) {
-      throw Exception('Impossibile completare il login. Controlla la tua connessione.');
+      // Errore nel caso in cui la password è errata
+      else if (errore.code == 'wrong-password' || errore.code == 'invalid-credential') {
+        debugPrint('La password o l\'email inserita è errata.'); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      } else {
+        debugPrint('Errore durante il login: ${errore.message}'); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      }
+      rethrow; // Rilancia l'errore per poterlo mostrare nella UI
     }
   }
 
-  
   // RF-02 LOGOUT
-  
-  Future<String> effettuaLogout() async {
+  Future < void > effettuaLogout() async {
     try {
       // Effettua il logout dell'utente corrente
       await _istanza.signOut();
       debugPrint("Logout effettuato con successo."); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     } catch (errore) {
-      throw Exception('Impossibile effettuare il logout in questo momento. Riprova.');
+      // Gestione di eventuali errori durante il logout
+      debugPrint("Errore imprevisto durante il logout: $errore"); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      rethrow;
     }
   }
 
-  
   // RF-03 RECUPERO PASSWORD
-  
-  Future<String> recuperaPassword(String emailUtente) async {
+  Future < void > recuperaPassword(String emailUtente) async {
     try {
       // Invia un'email all'utente con un link sicuro generato da Firebase per reimpostare la password.
       await _istanza.sendPasswordResetEmail(email: emailUtente);
@@ -119,75 +124,6 @@ class Autenticazione {
       // Gestione di eventuali errori durante l'invio dell'email di recupero
       debugPrint("Errore durante l'invio dell'email di recupero: ${errore.message}"); //!!!!!!!!!!!!!!!!!!!!!!!!!!!
       rethrow;
-    }
-  }
-
-
-  // METODI PER GESTIONE PROFILO 
-
-  // Ottiene i dati completi dell'utente da Firestore
-  Future<Map<String, dynamic>?> ottieniDatiUtente() async {
-    User? user = _istanza.currentUser;
-    if (user != null) {
-      DocumentSnapshot doc = await _database.collection('utenti').doc(user.uid).get();
-      return doc.data() as Map<String, dynamic>?;
-    }
-    return null;
-  }
-
-  // Aggiorna i dati anagrafici su Firestore e il DisplayName su Auth
-  Future<void> aggiornaDatiUtente({
-    required String nome,
-    required String cognome,
-    required String username,
-    required String email,
-  }) async {
-    User? user = _istanza.currentUser;
-    if (user == null) throw Exception("Utente non connesso");
-
-    // Se l'email è cambiata, aggiorna su Firebase Auth
-    if (email != user.email) {
-      await user.verifyBeforeUpdateEmail(email);
-    }
-
-    // Aggiorna Firestore
-    await _database.collection('utenti').doc(user.uid).update({
-      'nome': nome,
-      'cognome': cognome,
-      'username': username,
-      'email': email,
-    });
-
-    // Aggiorna DisplayName su Auth
-    await user.updateDisplayName("$nome $cognome");
-  }
-
-  // Aggiorna la password ma prima chiede a Firebase se la vecchia è corretta
-  Future<void> aggiornaPasswordConVerifica(String vecchiaPassword, String nuovaPassword) async {
-    User? user = _istanza.currentUser;
-    // Se per qualche motivo non ho l'utente o la sua email, blocco tutto
-    if (user == null || user.email == null) throw Exception("Utente non connesso");
-
-    try {
-      // Creo le credenziali mescolando la sua email attuale e la password vecchia che ha appena digitato
-      AuthCredential credenziali = EmailAuthProvider.credential(
-        email: user.email!, 
-        password: vecchiaPassword
-      );
-
-      // Ri-autentico l'utente. Se la password vecchia è sbagliata, Firebase lancia un errore qui
-      await user.reauthenticateWithCredential(credenziali);
-
-      // Se il codice arriva qui, significa che la vecchia password era giusta dunque via libera per la nuova
-      await user.updatePassword(nuovaPassword);
-      
-    } on FirebaseAuthException catch (e) {
-      // Intercetto gli errori specifici di password errata per dare un messaggio più chiaro in italiano
-      if (e.code == 'invalid-credential' || e.code == 'wrong-password') {
-        throw Exception("La vecchia password inserita non è corretta.");
-      }
-      // Se è un altro errore, lo rimando su così com'è
-      throw Exception(e.message);
     }
   }
 }
