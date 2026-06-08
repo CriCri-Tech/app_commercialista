@@ -14,18 +14,18 @@ class Autenticazione {
   // Stato dell'autenticazione
   Stream<User?> get statoAutenticazione => _istanza.authStateChanges();
 
-  
-  // RF-00 SIGN UP (Registrazione) 
-  
-  Future<UserCredential> effettuaRegistrazione({
-    required String email,
-    required String password,
-    required String nome,
-    required String cognome,
-    required String username, 
-    required DateTime dataDiNascita,
-    String ruolo = 'utente',
-  }) async {
+  // RF-00 SIGN IN
+  Future < UserCredential ? > effettuaRegistrazione({
+      // Dati richiesti per la registrazione
+      required String email,
+      required String password,
+      required String nome,
+      required String cognome,
+      required DateTime dataDiNascita,
+      String ruolo = 'utente' // Valore predefinito per il ruolo (può essere 'utente' o 'amministratore')
+    }
+
+  ) async {
     try {
       // Tenta la creazione dell'account su Firebase Auth
       UserCredential credenziali = await _istanza.createUserWithEmailAndPassword(
@@ -39,22 +39,27 @@ class Autenticazione {
         // Aggiorna il profilo dell'utente con Nome e Cognome
         await nuovoUtente.updateDisplayName("$nome $cognome");
 
-        // Salva i dati anagrafici, il ruolo e l'username su Cloud Firestore
+        // Salva i dati anagrafici e di ruolo nel database        
+        // Creazione di un documento con ID uguale all'UID dell'utente per una facile associazione tra Auth e Firestore
         await _database.collection('utenti').doc(nuovoUtente.uid).set({
-          'nome': nome,
-          'cognome': cognome,
-          'username': username, 
-          'email': email,
-          'dataDiNascita': dataDiNascita.toIso8601String(),
-          'ruolo': ruolo,
-          'dataCreazione': FieldValue.serverTimestamp(),
-        });
+            'nome': nome,
+            'cognome': cognome,
+            'email': email,
+            // Conversione della data di nascita come stringa
+            'dataDiNascita': dataDiNascita.toIso8601String(),
+            'ruolo': ruolo,
+            // Salvataggio della data di creazione dell'account 
+            'dataCreazione': FieldValue.serverTimestamp(),
+          }
+
+        );
+
+        debugPrint("Registrazione completata. Utente: ${nuovoUtente.email} | Ruolo: $ruolo");
       }
-      
-      // Ritorniamo le credenziali alla UI per confermare il successo
       return credenziali;
-      
-    } on FirebaseAuthException catch (errore) {
+    }
+    on FirebaseAuthException catch (errore) {
+      // Gestione degli errori specifici di Firebase Auth
       if (errore.code == 'weak-password') {
         throw Exception('La password fornita è troppo debole (minimo 6 caratteri).');
       } else if (errore.code == 'email-already-in-use') {
@@ -74,12 +79,13 @@ class Autenticazione {
   
   Future<UserCredential> effettuaLogin(String emailUtente, String passwordUtente) async {
     try {
-      UserCredential credenziali = await _istanza.signInWithEmailAndPassword(
-        email: emailUtente, 
-        password: passwordUtente,
-      );
+      // Legge email e password e tenta di effettuare il login con Firebase Authentication
+      UserCredential credenziali = await _istanza.signInWithEmailAndPassword(email: emailUtente, password: passwordUtente);
+      debugPrint("Login effettuato con successo: ${credenziali.user?.email}"); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       return credenziali;
-    } on FirebaseAuthException catch (errore) {
+    }
+    on FirebaseAuthException catch (errore) {
+      // Errore nel caso in cui l'email non è registrata o è inserita male
       if (errore.code == 'user-not-found' || errore.code == 'invalid-email') {
         throw Exception('Nessun account trovato con questa email.');
       } else if (errore.code == 'wrong-password' || errore.code == 'invalid-credential') {
@@ -97,8 +103,9 @@ class Autenticazione {
   
   Future<String> effettuaLogout() async {
     try {
+      // Effettua il logout dell'utente corrente
       await _istanza.signOut();
-      return "Disconnessione effettuata con successo.";
+      debugPrint("Logout effettuato con successo."); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     } catch (errore) {
       throw Exception('Impossibile effettuare il logout in questo momento. Riprova.');
     }
@@ -109,87 +116,14 @@ class Autenticazione {
   
   Future<String> recuperaPassword(String emailUtente) async {
     try {
+      // Invia un'email all'utente con un link sicuro generato da Firebase per reimpostare la password.
       await _istanza.sendPasswordResetEmail(email: emailUtente);
-      return "Email di recupero inviata con successo a: $emailUtente";
-    } on FirebaseAuthException catch (errore) {
-      if (errore.code == 'user-not-found') {
-        throw Exception('Nessun utente registrato con questa email.');
-      } else if (errore.code == 'invalid-email') {
-        throw Exception('Il formato dell\'indirizzo email inserito non è valido.');
-      } else {
-        throw Exception('Errore durante l\'invio: ${errore.message}');
-      }
-    } catch (errore) {
-      throw Exception('Impossibile inviare l\'email di recupero. Riprova più tardi.');
+      debugPrint("Email di recupero inviata a: $emailUtente"); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     }
-  }
-
-
-  // METODI PER GESTIONE PROFILO 
-
-  // Ottiene i dati completi dell'utente da Firestore
-  Future<Map<String, dynamic>?> ottieniDatiUtente() async {
-    User? user = _istanza.currentUser;
-    if (user != null) {
-      DocumentSnapshot doc = await _database.collection('utenti').doc(user.uid).get();
-      return doc.data() as Map<String, dynamic>?;
-    }
-    return null;
-  }
-
-  // Aggiorna i dati anagrafici su Firestore e il DisplayName su Auth
-  Future<void> aggiornaDatiUtente({
-    required String nome,
-    required String cognome,
-    required String username,
-    required String email,
-  }) async {
-    User? user = _istanza.currentUser;
-    if (user == null) throw Exception("Utente non connesso");
-
-    // Se l'email è cambiata, aggiorna su Firebase Auth
-    if (email != user.email) {
-      await user.verifyBeforeUpdateEmail(email);
-    }
-
-    // Aggiorna Firestore
-    await _database.collection('utenti').doc(user.uid).update({
-      'nome': nome,
-      'cognome': cognome,
-      'username': username,
-      'email': email,
-    });
-
-    // Aggiorna DisplayName su Auth
-    await user.updateDisplayName("$nome $cognome");
-  }
-
-  // Aggiorna la password ma prima chiede a Firebase se la vecchia è corretta
-  Future<void> aggiornaPasswordConVerifica(String vecchiaPassword, String nuovaPassword) async {
-    User? user = _istanza.currentUser;
-    // Se per qualche motivo non ho l'utente o la sua email, blocco tutto
-    if (user == null || user.email == null) throw Exception("Utente non connesso");
-
-    try {
-      // Creo le credenziali mescolando la sua email attuale e la password vecchia che ha appena digitato
-      AuthCredential credenziali = EmailAuthProvider.credential(
-        email: user.email!, 
-        password: vecchiaPassword
-      );
-
-      // Ri-autentico l'utente. Se la password vecchia è sbagliata, Firebase lancia un errore qui
-      await user.reauthenticateWithCredential(credenziali);
-
-      // Se il codice arriva qui, significa che la vecchia password era giusta dunque via libera per la nuova
-      await user.updatePassword(nuovaPassword);
-      
-    } on FirebaseAuthException catch (e) {
-      // Intercetto gli errori specifici di password errata per dare un messaggio più chiaro in italiano
-      if (e.code == 'invalid-credential' || e.code == 'wrong-password') {
-        throw Exception("La vecchia password inserita non è corretta.");
-      }
-      // Se è un altro errore, lo rimando su così com'è
-      throw Exception(e.message);
+    on FirebaseAuthException catch (errore) {
+      // Gestione di eventuali errori durante l'invio dell'email di recupero
+      debugPrint("Errore durante l'invio dell'email di recupero: ${errore.message}"); //!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      rethrow;
     }
   }
 }
