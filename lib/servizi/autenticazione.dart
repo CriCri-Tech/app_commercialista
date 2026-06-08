@@ -16,13 +16,14 @@ class Autenticazione {
   Stream<User?> get statoAutenticazione => _istanza.authStateChanges();
 
   
-  // RF-00 SIGN IN (Registrazione)
+  // RF-00 SIGN UP (Registrazione) 
   
   Future<UserCredential> effettuaRegistrazione({
     required String email,
     required String password,
     required String nome,
     required String cognome,
+    required String username, 
     required DateTime dataDiNascita,
     String ruolo = 'utente',
   }) async {
@@ -39,10 +40,11 @@ class Autenticazione {
         // Aggiorna il profilo dell'utente con Nome e Cognome
         await nuovoUtente.updateDisplayName("$nome $cognome");
 
-        // Salva i dati anagrafici e il ruolo su Cloud Firestore
+        // Salva i dati anagrafici, il ruolo e l'username su Cloud Firestore
         await _database.collection('utenti').doc(nuovoUtente.uid).set({
           'nome': nome,
           'cognome': cognome,
+          'username': username, // <-- Salva l'username inserito o predefinito
           'email': email,
           'dataDiNascita': dataDiNascita.toIso8601String(),
           'ruolo': ruolo,
@@ -54,7 +56,6 @@ class Autenticazione {
       return credenziali;
       
     } on FirebaseAuthException catch (errore) {
-      // Intercettiamo gli errori di Firebase e lanciamo messaggi personalizzati per la UI
       if (errore.code == 'weak-password') {
         throw Exception('La password fornita è troppo debole (minimo 6 caratteri).');
       } else if (errore.code == 'email-already-in-use') {
@@ -74,17 +75,12 @@ class Autenticazione {
   
   Future<UserCredential> effettuaLogin(String emailUtente, String passwordUtente) async {
     try {
-      // Tenta l'accesso con email e password
       UserCredential credenziali = await _istanza.signInWithEmailAndPassword(
         email: emailUtente, 
         password: passwordUtente,
       );
-      
-      // Ritorna le credenziali alla UI se le credenziali sono corrette
       return credenziali;
-      
     } on FirebaseAuthException catch (errore) {
-      // Gestione degli errori di login passati direttamente alla UI
       if (errore.code == 'user-not-found' || errore.code == 'invalid-email') {
         throw Exception('Nessun account trovato con questa email.');
       } else if (errore.code == 'wrong-password' || errore.code == 'invalid-credential') {
@@ -102,12 +98,8 @@ class Autenticazione {
   
   Future<String> effettuaLogout() async {
     try {
-      // Esegue il logout da Firebase
       await _istanza.signOut();
-      
-      // Ritorna una stringa di conferma che verrà mostrata nella UI
       return "Disconnessione effettuata con successo.";
-      
     } catch (errore) {
       throw Exception('Impossibile effettuare il logout in questo momento. Riprova.');
     }
@@ -118,12 +110,8 @@ class Autenticazione {
   
   Future<String> recuperaPassword(String emailUtente) async {
     try {
-      // Richiede a Firebase l'invio dell'email di reset
       await _istanza.sendPasswordResetEmail(email: emailUtente);
-      
-      // Ritorna il testo di successo indicando la mail specifica del cliente
       return "Email di recupero inviata con successo a: $emailUtente";
-      
     } on FirebaseAuthException catch (errore) {
       if (errore.code == 'user-not-found') {
         throw Exception('Nessun utente registrato con questa email.');
