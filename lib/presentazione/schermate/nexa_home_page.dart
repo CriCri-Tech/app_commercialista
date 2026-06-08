@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:nexa/servizi/autenticazione.dart';
-import 'profilo_page.dart';
-import 'welcome_page.dart';
 
 class NexaHomePage extends StatelessWidget {
   const NexaHomePage({super.key});
@@ -39,11 +37,7 @@ class NexaHomePage extends StatelessWidget {
               title: const Text('Profilo'),
               onTap: () {
                 Navigator.pop(context); // Chiude la tendina
-                // Navigazione alla pagina profilo
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfiloPage()),
-                );
+                // In futuro potrai mettere qui la navigazione alla pagina profilo
               },
             ),
             // Elemento del menu: Logout
@@ -51,17 +45,10 @@ class NexaHomePage extends StatelessWidget {
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text('Disconnettiti', style: TextStyle(color: Colors.red)),
               onTap: () async {
-                // Esegue il logout su Firebase
                 await Autenticazione().effettuaLogout();
-                
                 if (context.mounted) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const WelcomePage(), 
-                    ),
-                    (Route<dynamic> route) => false,
-                  );
+                  Navigator.pop(context); // Chiude la tendina
+                  Navigator.pop(context); // Torna alla pagina di benvenuto/login
                 }
               },
             ),

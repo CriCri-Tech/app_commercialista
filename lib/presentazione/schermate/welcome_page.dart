@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 // Importa la pagina di accesso
 import 'log_in_page.dart';
 // Importa la pagina di registrazione
+=======
+// Importa la pagina di registrazione che hai già creato
+>>>>>>> b50ce1a (Inizio UI con pagina di benvenuto, signUp e Home)
 import 'sign_up_page.dart'; 
 
 
@@ -57,14 +61,28 @@ class WelcomePage extends StatelessWidget {
                     elevation: 0,
                   ),
                   onPressed: () {
+<<<<<<< HEAD
                     // Naviga verso la pagina di login.
+=======
+                    // Quando avrai la pagina di Login, decommenta questo codice:
+                    /*
+>>>>>>> b50ce1a (Inizio UI con pagina di benvenuto, signUp e Home)
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const LoginPage(),
                       ),
                     );
+<<<<<<< HEAD
                     
+=======
+                    */
+                    
+                    // Messaggio provvisorio finché non crei la pagina
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('La pagina di Login sarà presto disponibile!')),
+                    );
+>>>>>>> b50ce1a (Inizio UI con pagina di benvenuto, signUp e Home)
                   },
                   child: const Text('Accedi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
@@ -82,11 +100,20 @@ class WelcomePage extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
+<<<<<<< HEAD
                     // Naviga verso la pagina di registrazione.
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const RegistrazionePage(), 
+=======
+                    // Naviga verso la pagina di registrazione che hai già costruito usando un semplice 'push'.
+                    // In questo modo l'utente potrà tornare indietro a questa schermata se cambia idea.
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegistrazionePage(), // Assicurati che il nome della classe sia corretto
+>>>>>>> b50ce1a (Inizio UI con pagina di benvenuto, signUp e Home)
                       ),
                     );
                   },
