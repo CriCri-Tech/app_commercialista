@@ -15,14 +15,13 @@ class Autenticazione {
   Stream<User?> get statoAutenticazione => _istanza.authStateChanges();
 
   
-  // RF-00 SIGN UP (Registrazione) 
+  // RF-00 SIGN IN (Registrazione)
   
   Future<UserCredential> effettuaRegistrazione({
     required String email,
     required String password,
     required String nome,
     required String cognome,
-    required String username, 
     required DateTime dataDiNascita,
     String ruolo = 'utente',
   }) async {
@@ -39,11 +38,10 @@ class Autenticazione {
         // Aggiorna il profilo dell'utente con Nome e Cognome
         await nuovoUtente.updateDisplayName("$nome $cognome");
 
-        // Salva i dati anagrafici, il ruolo e l'username su Cloud Firestore
+        // Salva i dati anagrafici e il ruolo su Cloud Firestore
         await _database.collection('utenti').doc(nuovoUtente.uid).set({
           'nome': nome,
           'cognome': cognome,
-          'username': username, 
           'email': email,
           'dataDiNascita': dataDiNascita.toIso8601String(),
           'ruolo': ruolo,
@@ -55,6 +53,7 @@ class Autenticazione {
       return credenziali;
       
     } on FirebaseAuthException catch (errore) {
+      // Intercettiamo gli errori di Firebase e lanciamo messaggi personalizzati per la UI
       if (errore.code == 'weak-password') {
         throw Exception('La password fornita è troppo debole (minimo 6 caratteri).');
       } else if (errore.code == 'email-already-in-use') {
@@ -74,12 +73,17 @@ class Autenticazione {
   
   Future<UserCredential> effettuaLogin(String emailUtente, String passwordUtente) async {
     try {
+      // Tenta l'accesso con email e password
       UserCredential credenziali = await _istanza.signInWithEmailAndPassword(
         email: emailUtente, 
         password: passwordUtente,
       );
+      
+      // Ritorna le credenziali alla UI se le credenziali sono corrette
       return credenziali;
+      
     } on FirebaseAuthException catch (errore) {
+      // Gestione degli errori di login passati direttamente alla UI
       if (errore.code == 'user-not-found' || errore.code == 'invalid-email') {
         throw Exception('Nessun account trovato con questa email.');
       } else if (errore.code == 'wrong-password' || errore.code == 'invalid-credential') {
@@ -97,8 +101,12 @@ class Autenticazione {
   
   Future<String> effettuaLogout() async {
     try {
+      // Esegue il logout da Firebase
       await _istanza.signOut();
+      
+      // Ritorna una stringa di conferma che verrà mostrata nella UI
       return "Disconnessione effettuata con successo.";
+      
     } catch (errore) {
       throw Exception('Impossibile effettuare il logout in questo momento. Riprova.');
     }
@@ -109,8 +117,12 @@ class Autenticazione {
   
   Future<String> recuperaPassword(String emailUtente) async {
     try {
+      // Richiede a Firebase l'invio dell'email di reset
       await _istanza.sendPasswordResetEmail(email: emailUtente);
+      
+      // Ritorna il testo di successo indicando la mail specifica del cliente
       return "Email di recupero inviata con successo a: $emailUtente";
+      
     } on FirebaseAuthException catch (errore) {
       if (errore.code == 'user-not-found') {
         throw Exception('Nessun utente registrato con questa email.');
@@ -121,75 +133,6 @@ class Autenticazione {
       }
     } catch (errore) {
       throw Exception('Impossibile inviare l\'email di recupero. Riprova più tardi.');
-    }
-  }
-
-
-  // METODI PER GESTIONE PROFILO 
-
-  // Ottiene i dati completi dell'utente da Firestore
-  Future<Map<String, dynamic>?> ottieniDatiUtente() async {
-    User? user = _istanza.currentUser;
-    if (user != null) {
-      DocumentSnapshot doc = await _database.collection('utenti').doc(user.uid).get();
-      return doc.data() as Map<String, dynamic>?;
-    }
-    return null;
-  }
-
-  // Aggiorna i dati anagrafici su Firestore e il DisplayName su Auth
-  Future<void> aggiornaDatiUtente({
-    required String nome,
-    required String cognome,
-    required String username,
-    required String email,
-  }) async {
-    User? user = _istanza.currentUser;
-    if (user == null) throw Exception("Utente non connesso");
-
-    // Se l'email è cambiata, aggiorna su Firebase Auth
-    if (email != user.email) {
-      await user.verifyBeforeUpdateEmail(email);
-    }
-
-    // Aggiorna Firestore
-    await _database.collection('utenti').doc(user.uid).update({
-      'nome': nome,
-      'cognome': cognome,
-      'username': username,
-      'email': email,
-    });
-
-    // Aggiorna DisplayName su Auth
-    await user.updateDisplayName("$nome $cognome");
-  }
-
-  // Aggiorna la password ma prima chiede a Firebase se la vecchia è corretta
-  Future<void> aggiornaPasswordConVerifica(String vecchiaPassword, String nuovaPassword) async {
-    User? user = _istanza.currentUser;
-    // Se per qualche motivo non ho l'utente o la sua email, blocco tutto
-    if (user == null || user.email == null) throw Exception("Utente non connesso");
-
-    try {
-      // Creo le credenziali mescolando la sua email attuale e la password vecchia che ha appena digitato
-      AuthCredential credenziali = EmailAuthProvider.credential(
-        email: user.email!, 
-        password: vecchiaPassword
-      );
-
-      // Ri-autentico l'utente. Se la password vecchia è sbagliata, Firebase lancia un errore qui
-      await user.reauthenticateWithCredential(credenziali);
-
-      // Se il codice arriva qui, significa che la vecchia password era giusta dunque via libera per la nuova
-      await user.updatePassword(nuovaPassword);
-      
-    } on FirebaseAuthException catch (e) {
-      // Intercetto gli errori specifici di password errata per dare un messaggio più chiaro in italiano
-      if (e.code == 'invalid-credential' || e.code == 'wrong-password') {
-        throw Exception("La vecchia password inserita non è corretta.");
-      }
-      // Se è un altro errore, lo rimando su così com'è
-      throw Exception(e.message);
     }
   }
 }
