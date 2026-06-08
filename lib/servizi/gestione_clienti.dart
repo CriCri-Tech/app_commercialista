@@ -20,6 +20,29 @@ class ServizioClienti{
     }
   }
 
+  // Metodo per modificare un cliente esistente
+  Future<void> modificaCliente(Cliente cliente) async {
+    try{
+      // Accede al documento del cliente tramite il suo ID e aggiorna i suoi dati con quelli forniti
+      await _clientiCollection.doc(cliente.id).update(cliente.toMap());
+    } catch(e){
+      debugPrint("Errore durante la modifica del cliente: \$e");
+      rethrow;
+    }
+  }
+
+  // Metodo per eliminare un cliente dal database
+  Future <void> eliminaCliente(String clienteId) async {
+    try{
+      // Accede al documento del cliente tramite il suo ID e lo elimina dalla collezione clients
+      await _clientiCollection.doc(clienteId).delete();
+    } catch(e){
+      debugPrint("Errore durante l'eliminazione del cliente: \$e");
+      rethrow;
+    }
+  }
+
+
   // Metodo per recuperare tutti i clienti dal database
   Stream<List<Cliente>> ottieniClienti() {
     // Accede alla collection dei clienti su Firestore e li ordina per nome azienda
