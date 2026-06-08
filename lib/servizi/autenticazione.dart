@@ -42,19 +42,14 @@ class Autenticazione {
         // Salva i dati anagrafici e di ruolo nel database        
         // Creazione di un documento con ID uguale all'UID dell'utente per una facile associazione tra Auth e Firestore
         await _database.collection('utenti').doc(nuovoUtente.uid).set({
-            'nome': nome,
-            'cognome': cognome,
-            'email': email,
-            // Conversione della data di nascita come stringa
-            'dataDiNascita': dataDiNascita.toIso8601String(),
-            'ruolo': ruolo,
-            // Salvataggio della data di creazione dell'account 
-            'dataCreazione': FieldValue.serverTimestamp(),
-          }
-
-        );
-
-        debugPrint("Registrazione completata. Utente: ${nuovoUtente.email} | Ruolo: $ruolo");
+          'nome': nome,
+          'cognome': cognome,
+          'username': username, 
+          'email': email,
+          'dataDiNascita': dataDiNascita.toIso8601String(),
+          'ruolo': ruolo,
+          'dataCreazione': FieldValue.serverTimestamp(),
+        });
       }
       return credenziali;
     }
