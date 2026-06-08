@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'nexa_home_page.dart'; 
+
 // Import del servizio custom incaricato di gestire la logica di autenticazione/registrazione
 import 'package:nexa/servizi/autenticazione.dart';
 
@@ -21,6 +23,8 @@ class _RegistrazionePageState extends State<RegistrazionePage> {
   
   // Variabile di stato per memorizzare la data di nascita selezionata dall'utente
   DateTime? _dataDiNascita;
+
+  //bool _staCaricando = false; ----------------------------------------------------- (opzionale per gestire lo stato di caricamento durante la registrazione)
 
   // Istanza del servizio che si occuperà della chiamata API o Firebase per la registrazione
   final Autenticazione _authServizio = Autenticazione();
@@ -96,7 +100,7 @@ class _RegistrazionePageState extends State<RegistrazionePage> {
               controller: _usernameController,
               decoration: const InputDecoration(
                 labelText: 'Nome Utente (Opzionale)', 
-                hintText: 'Es. m.rossi (lascia vuoto per utilizzare nome.cognome)',
+                hintText: 'Nome di default: nome.cognome',
                 border: OutlineInputBorder()
               ),
             ),
@@ -201,10 +205,18 @@ class _RegistrazionePageState extends State<RegistrazionePage> {
                         duration: const Duration(seconds: 3),
                       ),
                     );
-                    
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NexaHomePage(),
+                      ),
+                    );
                   }
                   
                 } catch (errore) {
+
+                  debugPrint("\n\nERRORE BLOCCO REGISTRAZIONE: $errore \n\n");
+
                   // Fallback in caso di errore: ripulisco il testo dell'eccezione per l'interfaccia utente
                   String messaggioPulito = errore.toString().replaceAll('Exception: ', '');
                   if (context.mounted) {
