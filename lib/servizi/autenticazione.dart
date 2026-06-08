@@ -43,7 +43,7 @@ class Autenticazione {
         await _database.collection('utenti').doc(nuovoUtente.uid).set({
           'nome': nome,
           'cognome': cognome,
-          'username': username, // <-- Salva l'username inserito o predefinito
+          'username': username, 
           'email': email,
           'dataDiNascita': dataDiNascita.toIso8601String(),
           'ruolo': ruolo,
