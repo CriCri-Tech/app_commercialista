@@ -46,11 +46,12 @@ class ServizioScadenze{
   }
 
   // Metodo per recuperare le scadenze di un cliente specifico dal database
-  Stream<List<Scadenza>> ottieniScadenzePerCliente(String clientId) {
+  Stream<List<Scadenza>> ottieniScadenzePerCliente(String clientId, String studioId) {
     // Accede alla collection delle scadenze su Firestore, filtra per clientId e le ordina per data di scadenza
     // Rimane in ascolto in tempo reale di qualsiasi modifica sul database
     // Trasforma i dati grezzi di Firebase in una lista di istanze della classe Scadenza
     return _scadenzeCollection
+      .where("studioId", isEqualTo: studioId)
       .where("clientId", isEqualTo: clientId)
       .orderBy("dueDate")
       .snapshots()
@@ -62,7 +63,7 @@ class ServizioScadenze{
   }
 
   // Metodo per ottenere le scadenze odierne
-  Stream<List<Scadenza>> ottieniScadenzeOdierne() {
+  Stream<List<Scadenza>> ottieniScadenzeOdierne(String studioId) {
     DateTime oggi = DateTime.now();
     DateTime inizioGiorno = DateTime(oggi.year, oggi.month, oggi.day);
     DateTime fineGiorno = DateTime(oggi.year, oggi.month, oggi.day, 23, 59, 59);
@@ -71,6 +72,7 @@ class ServizioScadenze{
     // Rimane in ascolto in tempo reale di qualsiasi modifica sul database
     // Trasforma i dati grezzi di Firebase in una lista di istanze della classe Scadenza
     return _scadenzeCollection
+      .where("studioId", isEqualTo: studioId)
       .where("dueDate", isGreaterThanOrEqualTo: Timestamp.fromDate(inizioGiorno))
       .where("dueDate", isLessThanOrEqualTo: Timestamp.fromDate(fineGiorno))
       .orderBy("dueDate")

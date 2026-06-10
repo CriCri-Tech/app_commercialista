@@ -44,11 +44,12 @@ class ServizioClienti{
 
 
   // Metodo per recuperare tutti i clienti dal database
-  Stream<List<Cliente>> ottieniClienti() {
+  Stream<List<Cliente>> ottieniClienti(String studioId) {
     // Accede alla collection dei clienti su Firestore e li ordina per nome azienda
     // Rimane in ascolto in tempo reale di qualsiasi modifica sul database
     // Trasforma i dati grezzi di Firebase in una lista di istanze della classe Cliente
     return _clientiCollection
+      .where("studioId", isEqualTo: studioId)
       .orderBy("companyName")
       .snapshots()
       .map((snapshot){
@@ -59,10 +60,11 @@ class ServizioClienti{
   }
 
   // Metodo per ricercare un cliente tramite il nome dell'azienda
-  Stream<List<Cliente>> ricercaClienti(String query) {
+  Stream<List<Cliente>> ricercaClienti(String query, String studioId) {
     // Filtra la collection dei clienti su Firestore cercando quelli il cui nome inizia con il testo inserito,
     // ascolta le modifiche in tempo reale e converte ogni documento trovato in un oggetto 'Cliente' inserito in una lista
     return _clientiCollection
+      .where("studioId", isEqualTo: studioId)
       .where("companyName", isGreaterThanOrEqualTo: query)
       .where("companyName", isLessThan: query + 'z')
       .snapshots()

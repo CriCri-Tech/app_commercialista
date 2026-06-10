@@ -4,6 +4,7 @@ import "package:cloud_firestore/cloud_firestore.dart";
 // Classe che rappresenta la scadenza
 class Scadenza{
   String? id; // ID della scadenza
+  String studioId; // ID dello studio associato alla scadenza
   String clientId; // ID del cliente associato alla scadenza
   String type; 
   DateTime dueDate; // Data di scadenza
@@ -13,6 +14,7 @@ class Scadenza{
   // Metodo costruttore
   Scadenza({
     this.id,
+    required this.studioId,
     required this.clientId,
     required this.type,
     required this.dueDate,
@@ -24,6 +26,7 @@ class Scadenza{
   factory Scadenza.fromMap(Map<String, dynamic> data, String documentId){
     return Scadenza(
       id: documentId,
+      studioId: data["studioId"] ?? '',
       clientId: data["clientId"] ?? '',
       type: data["type"] ?? '',
       dueDate: (data["dueDate"] as Timestamp).toDate(),
@@ -35,6 +38,7 @@ class Scadenza{
   // Metodo per convertire una scadenza in una mappa da salvare su Firestore
   Map<String, dynamic> toMap(){
     return {
+      "studioId": studioId,
       "clientId": clientId,
       "type": type,
       "dueDate": Timestamp.fromDate(dueDate),

@@ -5,6 +5,7 @@ import "package:cloud_firestore/cloud_firestore.dart";
 class Cliente {
   String? id; // ID univoco del cliente
   String companyName; // Nome dell'azienda
+  String studioId; // ID dello studio associato al cliente 
   String vatNumber; // Partita IVA
   String taxCode; // Codice fiscale
   String pec;
@@ -17,6 +18,7 @@ class Cliente {
   // Metodo costruttore
   Cliente({
     this.id,
+    required this.studioId,
     required this.companyName,
     required this.vatNumber,
     required this.taxCode,
@@ -32,6 +34,7 @@ class Cliente {
   factory Cliente.fromMap(Map<String, dynamic> data, String documentId) {
     return Cliente(
       id: documentId,
+      studioId: data['studioId'] ?? '',
       companyName: data['companyName'] ?? '',
       vatNumber: data['vatNumber'] ?? '',
       taxCode: data['taxCode'] ?? '',
@@ -47,6 +50,7 @@ class Cliente {
   // Metodo per convertire un oggetto Cliente in una mappa da salvare su Firestore
   Map<String, dynamic> toMap() {
     return {
+      'studioId': studioId,
       'companyName': companyName,
       'vatNumber': vatNumber,
       'taxCode': taxCode,
