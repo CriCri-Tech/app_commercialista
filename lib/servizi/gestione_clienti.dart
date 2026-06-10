@@ -15,7 +15,7 @@ class ServizioClienti{
       // Dopo aver convertito l'oggetto Cliente in una mappa, lo aggiunge alla collezione 'clients' del database
       await _clientiCollection.add(cliente.toMap());
     } catch(e){
-      debugPrint("Errore durante l'aggiunta del cliente: \$e");
+      debugPrint("Errore durante l'aggiunta del cliente: $e");
       rethrow;
     }
   }
@@ -26,7 +26,7 @@ class ServizioClienti{
       // Accede al documento del cliente tramite il suo ID e aggiorna i suoi dati con quelli forniti
       await _clientiCollection.doc(cliente.id).update(cliente.toMap());
     } catch(e){
-      debugPrint("Errore durante la modifica del cliente: \$e");
+      debugPrint("Errore durante la modifica del cliente: $e");
       rethrow;
     }
   }
@@ -37,7 +37,7 @@ class ServizioClienti{
       // Accede al documento del cliente tramite il suo ID e lo elimina dalla collezione clients
       await _clientiCollection.doc(clienteId).delete();
     } catch(e){
-      debugPrint("Errore durante l'eliminazione del cliente: \$e");
+      debugPrint("Errore durante l'eliminazione del cliente: $e");
       rethrow;
     }
   }

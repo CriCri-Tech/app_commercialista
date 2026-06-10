@@ -18,7 +18,7 @@ class ServizioScadenze{
       // Dopo aver convertito l'oggetto Scadenza in una mappa, lo aggiunge alla collezione 'deadlines' del database
       await _scadenzeCollection.add(scadenza.toMap());
     } catch(e){
-      debugPrint("Errore durante l'aggiunta della scadenza: \$e");
+      debugPrint("Errore durante l'aggiunta della scadenza: $e");
       rethrow;
     }
   }
@@ -29,7 +29,7 @@ class ServizioScadenze{
       // Accede al documento della scadenza tramite il suo ID e aggiorna i suoi dati con quelli forniti
       await _scadenzeCollection.doc(scadenza.id).update(scadenza.toMap());
     } catch(e){
-      debugPrint("Errore durante la modifica della scadenza: \$e");
+      debugPrint("Errore durante la modifica della scadenza: $e");
       rethrow;
     }
   }
@@ -40,7 +40,7 @@ class ServizioScadenze{
       // Accede al documento della scadenza tramite il suo ID e lo elimina dalla collezione deadlines
       await _scadenzeCollection.doc(scadenzaId).delete();
     } catch(e){
-      debugPrint("Errore durante l'eliminazione della scadenza: \$e");
+      debugPrint("Errore durante l'eliminazione della scadenza: $e");
       rethrow;
     }
   }
