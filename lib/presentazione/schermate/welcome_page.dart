@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-// Importa la pagina di registrazione che hai già creato
+// Importa la pagina di accesso
+import 'log_in_page.dart';
+// Importa la pagina di registrazione
 import 'sign_up_page.dart'; 
 
 
@@ -55,20 +57,14 @@ class WelcomePage extends StatelessWidget {
                     elevation: 0,
                   ),
                   onPressed: () {
-                    // Quando avrai la pagina di Login, decommenta questo codice:
-                    /*
+                    // Naviga verso la pagina di login.
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const LoginPage(),
                       ),
                     );
-                    */
                     
-                    // Messaggio provvisorio finché non crei la pagina
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('La pagina di Login sarà presto disponibile!')),
-                    );
                   },
                   child: const Text('Accedi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
@@ -86,12 +82,11 @@ class WelcomePage extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    // Naviga verso la pagina di registrazione che hai già costruito usando un semplice 'push'.
-                    // In questo modo l'utente potrà tornare indietro a questa schermata se cambia idea.
+                    // Naviga verso la pagina di registrazione.
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const RegistrazionePage(), // Assicurati che il nome della classe sia corretto
+                        builder: (context) => const RegistrazionePage(), 
                       ),
                     );
                   },
