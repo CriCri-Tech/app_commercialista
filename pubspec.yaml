@@ -37,9 +37,9 @@ dependencies:
   firebase_core: ^4.10.0
   firebase_auth: ^6.5.2
   cloud_firestore: ^6.5.0
-  cunning_document_scanner: ^1.2.0
-  pdf: ^3.10.4
-  path_provider: ^2.1.2
+  firebase_messaging: ^16.3.0
+  flutter_local_notifications: ^22.0.0
+  file_picker: ^11.0.2
   firebase_storage: ^13.4.2
 
 dev_dependencies:
