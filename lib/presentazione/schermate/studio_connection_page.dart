@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import '../../servizi/gestione_studio.dart';
+import '../../servizi/gestione_studio.dart'; 
 
 class AssegnaStudioPage extends StatefulWidget {
   const AssegnaStudioPage({super.key});
@@ -17,13 +16,20 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
   final TextEditingController _pivaController = TextEditingController();
   
   bool _isLoading = false; 
-  final GestioneStudioService _studioService = GestioneStudioService(); // Istanza del tuo servizio
+  final GestioneStudioService _studioService = GestioneStudioService(); 
 
   @override
   void dispose() {
     _nomeController.dispose();
     _pivaController.dispose();
     super.dispose();
+  }
+
+  // Svuota gli input correnti
+  void _pulisciCampi() {
+    _nomeController.clear();
+    _pivaController.clear();
+    _formKey.currentState?.reset();
   }
 
   Future<void> _salvaAssegnazione() async {
@@ -34,11 +40,9 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
         final nomeStudio = _nomeController.text.trim();
         final partitaIva = _pivaController.text.trim();
 
-        // Recupera l'ID dell'utente loggato tramite Firebase Auth
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) throw Exception("Utente non autenticato.");
 
-        // Chiama il tuo Service per creare lo studio
         final codiceInvito = await _studioService.creaStudio(
           nomeStudio, 
           partitaIva, 
@@ -46,10 +50,9 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
         );
 
         if (mounted) {
-          // Mostra un pop-up con il Codice di Invito generato dal Service!
           showDialog(
             context: context,
-            barrierDismissible: false, // Obbliga l'utente a premere il bottone
+            barrierDismissible: false, 
             builder: (context) => AlertDialog(
               title: const Text('Studio Creato!', style: TextStyle(color: Color(0xFF1E3A8A))),
               content: Text(
@@ -59,8 +62,8 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
               actions: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Chiude il Dialog
-                    Navigator.pop(context); // Chiude la pagina Assegna Studio
+                    Navigator.pop(context);
+                    _pulisciCampi();
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A)),
                   child: const Text('OK', style: TextStyle(color: Colors.white)),
@@ -86,16 +89,17 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Assegna Studio'),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
-        elevation: 0,
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(32.0),
+          topRight: Radius.circular(32.0),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -155,13 +159,13 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: _pulisciCampi,
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             side: const BorderSide(color: Color(0xFF1E3A8A)),
                           ),
                           child: const Text(
-                            'Annulla',
+                            'Pulisci',
                             style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 16),
                           ),
                         ),
