@@ -23,7 +23,6 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confermaPasswordController = TextEditingController();
-  final TextEditingController _studioIdController = TextEditingController();
 
   // Variabile di stato per memorizzare la data di nascita selezionata dall'utente
   DateTime ? _dataDiNascita;
@@ -42,7 +41,6 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
     _emailController.dispose();
     _passwordController.dispose();
     _confermaPasswordController.dispose();
-    _studioIdController.dispose();
     super.dispose();
   }
 
@@ -107,16 +105,6 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                     decoration: const InputDecoration(
                       labelText: 'Nome Utente (Opzionale)',
                       hintText: 'Nome di default: nome.cognome',
-                      border: OutlineInputBorder()
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Campo Input: Studio ID
-                  TextField(
-                    controller: _studioIdController,
-                    decoration: const InputDecoration(
-                      labelText: 'Codice Studio*',
                       border: OutlineInputBorder()
                     ),
                   ),
@@ -192,14 +180,13 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                               String nomeInserito = _nomeController.text.trim();
                               String cognomeInserito = _cognomeController.text.trim();
                               String usernameInserito = _usernameController.text.trim();
-                              String studioIdInserito = _studioIdController.text.trim();
 
                               if (usernameInserito.isEmpty && nomeInserito.isNotEmpty && cognomeInserito.isNotEmpty) {
                                 usernameInserito = "${nomeInserito.toLowerCase()}.${cognomeInserito.toLowerCase()}";
                               }
 
                               // Validazione Locale dei campi di testo prima di avviare il caricamento
-                              if (emailInserita.isEmpty || passwordInserita.isEmpty || confermaPasswordInserita.isEmpty || nomeInserito.isEmpty || cognomeInserito.isEmpty || studioIdInserito.isEmpty) {
+                              if (emailInserita.isEmpty || passwordInserita.isEmpty || confermaPasswordInserita.isEmpty || nomeInserito.isEmpty || cognomeInserito.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Tutti i campi obbligatori evono essere compilati.'), backgroundColor: Colors.orange),
                                 );
@@ -235,7 +222,6 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                                   cognome: cognomeInserito,
                                   username: usernameInserito,
                                   dataDiNascita: _dataDiNascita!,
-                                  studioId: studioIdInserito,
                                 );
 
                                 // Successo
@@ -251,7 +237,7 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                      NexaHomePage(studioId: studioIdInserito),
+                                      NexaHomePage(),
                                     ),
                                   );
                                 }

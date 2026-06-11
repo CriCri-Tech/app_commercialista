@@ -164,7 +164,6 @@ class _ProfiloPageState extends State<ProfiloPage> {
                     filled: true
                   ),
                 ),
-                const SizedBox(height: 16),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,

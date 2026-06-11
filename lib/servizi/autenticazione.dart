@@ -22,8 +22,7 @@ class Autenticazione {
     required String password,
     required String nome,
     required String cognome,
-    required String username, 
-    required String studioId,
+    required String username,
     required DateTime dataDiNascita,
     String ruolo = 'utente',
   }) async {
@@ -46,7 +45,6 @@ class Autenticazione {
           'cognome': cognome,
           'username': username, 
           'email': email,
-          'studioId': studioId,
           'dataDiNascita': dataDiNascita.toIso8601String(),
           'ruolo': ruolo,
           'dataCreazione': FieldValue.serverTimestamp(),

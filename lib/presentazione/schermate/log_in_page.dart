@@ -122,15 +122,11 @@ class _LoginPageState extends State<LoginPage> {
                         // CHIAMATA AL METODO DEL RF-01
                         await _authServizio.effettuaLogin(email, password);
 
-                        // Recupera i dati dell'utente loggato, incluso lo studioId
-                        final datiUtente = await _authServizio.ottieniDatiUtente();
-                        final String studioIdRecuperato = datiUtente?['studioId'] ?? "";
-
                         if (context.mounted) {
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NexaHomePage(studioId: studioIdRecuperato),
+                              builder: (context) => NexaHomePage(),
                             ),
                             (Route<dynamic> route) => false,
                           );
