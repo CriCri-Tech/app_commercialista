@@ -1,50 +1,43 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Necessario per debugPrint
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// L'UNICA FUNZIONE PER IL CARICAMENTO E L'ASSOCIAZIONE DEI DOCUMENTI (RF-08)
+/// Funzione dedicata alla selezione di un documento dal dispositivo,
+/// al suo caricamento su Firebase Storage e al salvataggio dei relativi
+/// dati su Firestore. Prepara anche il payload per le notifiche.
 Future<void> eseguiSelezioneEUploadDocumento({
-  required BuildContext context,
   required String idCliente,       
   required String nomeCliente,     
   required String idCaricatoDa,    
   required String nomeCaricatoDa,  
 }) async {
-  
   try {
-    // --- 1. SELEZIONE DEL FILE DAL DISPOSITIVO ---
-    // Sintassi statica diretta per azzerare i conflitti di versione
+    // Selezione del file tramite il file manager del dispositivo.
     FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.any,
       allowMultiple: false, 
     );
 
-    // Gestione sicura del controllo null
+    // Verifica per interrompere il processo se l'utente chiude il selettore
+    // senza aver scelto alcun file.
     if (result == null || result.files.isEmpty || result.files.single.path == null) {
-      debugPrint("RF-08 - Selezione del file annullata dall'utente.");
+      debugPrint("Selezione del file annullata dall'utente.");
       return;
     }
 
-    // Mostriamo un indicatore di caricamento bloccante
-    if (context.mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    // Recuperiamo il percorso del file selezionato e il suo nome originario
+    // Estrazione del percorso locale e del nome originale del file.
     File file = File(result.files.single.path!);
     String nomeFile = result.files.single.name;
     
-    // Creiamo un timestamp per rendere il nome del file univoco
+    // Creazione di un timestamp per garantire che il nome del file sia
+    // univoco all'interno del database, evitando sovrascritture.
     String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
     String nomeFileUnivoco = "${timestamp}_$nomeFile";
 
-    // --- 2. UPLOAD SU FIREBASE STORAGE ---
+    // Definizione del percorso di archiviazione su Firebase Storage.
+    // I file vengono organizzati in cartelle specifiche per ogni cliente.
     Reference storageRef = FirebaseStorage.instance
         .ref()
         .child('clienti')
@@ -52,13 +45,15 @@ Future<void> eseguiSelezioneEUploadDocumento({
         .child('documenti')
         .child(nomeFileUnivoco);
 
+    // Avvio del caricamento fisico del file sul server.
     UploadTask uploadTask = storageRef.putFile(file);
     TaskSnapshot snapshotTask = await uploadTask;
     
+    // Recupero dell'indirizzo web generato per accedere al file appena caricato.
     String downloadUrl = await snapshotTask.ref.getDownloadURL();
-    debugPrint("RF-08 - File caricato con successo su Storage. URL: $downloadUrl");
+    debugPrint("File caricato con successo su Storage. URL: $downloadUrl");
 
-    // --- 3. SALVATAGGIO METADATI SU CLOUD FIRESTORE ---
+    // Preparazione dei dati informativi del documento da salvare su Firestore.
     final Map<String, dynamic> datiDocumento = {
       'nomeFile': nomeFile,
       'urlDownload': downloadUrl,
@@ -70,16 +65,17 @@ Future<void> eseguiSelezioneEUploadDocumento({
       'dataCaricamento': FieldValue.serverTimestamp(),
     };
 
+    // Creazione del nuovo record all'interno della collezione dei documenti.
     DocumentReference documentoRef = await FirebaseFirestore.instance
         .collection('documents')
         .add(datiDocumento);
         
-    debugPrint("RF-08 - Metadati del documento salvati su Firestore con ID: ${documentoRef.id}");
+    debugPrint("Metadati del documento salvati su Firestore con ID: ${documentoRef.id}");
 
-    // --- 4. INTEGRAZIONE CON IL MODULO NOTIFICHE PUSH (RF-10) ---
+    // Strutturazione del contenuto per l'eventuale invio di notifiche push al team.
     final mappaNotificaPush = {
       'notification': {
-        'title': '📄 Nuovo Documento Ricevuto',
+        'title': 'Nuovo Documento Ricevuto',
         'body': '$nomeCaricatoDa ha caricato il file "$nomeFile" nella scheda del cliente $nomeCliente.',
       },
       'data': {
@@ -87,23 +83,13 @@ Future<void> eseguiSelezioneEUploadDocumento({
         'referenceId': idCliente, 
       }
     };
-    debugPrint("RF-10 - Payload pronto per l'invio al team dello studio: $mappaNotificaPush");
-
-    // --- 5. CHIUSURA DEL LOADING E POPUP DI SUCCESSO ---
-    if (context.mounted) {
-      Navigator.pop(context); // Rimuove il loader circolare
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('📄 File "$nomeFile" caricato e associato correttamente!')),
-      );
-    }
+    debugPrint("Payload per l'invio della notifica pronto: $mappaNotificaPush");
 
   } catch (errore) {
-    debugPrint("Errore durante l'esecuzione del modulo RF-08: $errore");
-    if (context.mounted) {
-      Navigator.pop(context); // Rimuove il loader circolare
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ Errore durante il caricamento del file: $errore')),
-      );
-    }
+    debugPrint("Errore durante il processo di caricamento: $errore");
+    
+    // Rilancio dell'errore verso l'esterno in modo che l'interfaccia utente
+    // possa intercettarlo e mostrare il relativo messaggio all'utente.
+    throw Exception("Errore durante il caricamento del file: $errore");
   }
 }
