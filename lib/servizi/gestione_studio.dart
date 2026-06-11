@@ -1,20 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
-import '../modelli/studio_model.dart';
+// Sostituisci con il percorso corretto del tuo modello
+import '../modelli/studio_model.dart'; 
 
 class GestioneStudioService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  //Metodo per creare un nuovo studio
-  Future<String> creaStudio(String nomeStudio, String utenteCreatoreId) async {
+  // Metodo per creare un nuovo studio (AGGIORNATO con Partita IVA)
+  Future<String> creaStudio(String nomeStudio, String partitaIva, String utenteCreatoreId) async {
     try {
-      //Genera un codice di invito univoco di 6 caratteri alfanumerici
+      // Genera un codice di invito univoco di 6 caratteri alfanumerici
       String codiceInvito = _generaCodiceInvito();
 
-      //Crea l'oggetto Studio
+      // Crea l'oggetto Studio
       StudioModel nuovoStudio = StudioModel(
         id: '', // L'ID verrà generato automaticamente da Firestore
         nome: nomeStudio,
+        partitaIva: partitaIva, // <-- Aggiunto
         codiceInvito: codiceInvito,
         adminId: utenteCreatoreId,
         membri: [utenteCreatoreId], // Il creatore è il primo membro
@@ -40,7 +42,6 @@ class GestioneStudioService {
   // Metodo per accedere a uno studio esistente tramite codice di invito
   Future<void> accediAStudio(String codiceInvito, String utenteId) async {
     try {
-      // Cerca lo studio che ha questo codice di invito
       QuerySnapshot query = await _firestore
           .collection('studi')
           .where('codiceInvito', isEqualTo: codiceInvito)
@@ -51,18 +52,14 @@ class GestioneStudioService {
         throw Exception("Codice invito non valido o studio inesistente.");
       }
 
-      // Prende l'ID dello studio trovato
       String studioId = query.docs.first.id;
 
-      // Aggiunge l'utente all'array dei membri dello studio
       await _firestore.collection('studi').doc(studioId).update({
         'membri': FieldValue.arrayUnion([utenteId])
       });
 
-      // Aggiorna il profilo dell'utente per legarlo allo studio
       await _firestore.collection('utenti').doc(utenteId).update({
         'studioId': studioId,
-        // Aggiunge un ruolo 'default' per gli utenti che accedono tramite codice
         'ruolo': 'User'
       });
       
@@ -71,7 +68,7 @@ class GestioneStudioService {
     }
   }
 
-  // Funzione di supportoper generare il codice casuale
+  // Funzione di supporto per generare il codice casuale
   String _generaCodiceInvito() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     Random rnd = Random();

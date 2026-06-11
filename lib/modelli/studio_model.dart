@@ -3,14 +3,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class StudioModel {
   final String id;
   final String nome;
-  final String codiceInvito; // Codice generato per far accedere i collaboratori
-  final String adminId;      // L'UID di chi ha creato lo studio
-  final List<String> membri; // Lista degli UID degli utenti che fanno parte dello studio
+  final String partitaIva;   // <-- Aggiunto per collegarlo alla UI
+  final String codiceInvito; 
+  final String adminId;      
+  final List<String> membri; 
   final DateTime dataCreazione;
 
   StudioModel({
     required this.id,
     required this.nome,
+    required this.partitaIva, // <-- Aggiunto
     required this.codiceInvito,
     required this.adminId,
     required this.membri,
@@ -22,6 +24,7 @@ class StudioModel {
     return StudioModel(
       id: doc.id,
       nome: data['nome'] ?? '',
+      partitaIva: data['partitaIva'] ?? '', // <-- Aggiunto
       codiceInvito: data['codiceInvito'] ?? '',
       adminId: data['adminId'] ?? '',
       membri: List<String>.from(data['membri'] ?? []),
@@ -32,6 +35,7 @@ class StudioModel {
   Map<String, dynamic> toFirestore() {
     return {
       'nome': nome,
+      'partitaIva': partitaIva, // <-- Aggiunto
       'codiceInvito': codiceInvito,
       'adminId': adminId,
       'membri': membri,
