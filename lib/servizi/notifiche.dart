@@ -15,7 +15,7 @@ Future<void> eseguiSelezioneEUploadDocumento({
 }) async {
   try {
     // Selezione del file tramite l'interfaccia nativa del dispositivo.
-    FilePickerResult? result = await FilePicker.pickFiles(
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       allowMultiple: false,
     );
