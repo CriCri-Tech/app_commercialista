@@ -12,6 +12,7 @@ Future<void> eseguiSelezioneEUploadDocumento({
   required String nomeCliente,
   required String idCaricatoDa,
   required String nomeCaricatoDa,
+  required String studioId,
 }) async {
   try {
     // Selezione del file tramite l'interfaccia nativa del dispositivo.
@@ -37,6 +38,8 @@ Future<void> eseguiSelezioneEUploadDocumento({
     // Definizione del percorso di destinazione su Firebase Storage, strutturato per cliente.
     Reference storageRef = FirebaseStorage.instance
         .ref()
+        .child('studi')
+        .child(studioId)
         .child('clienti')
         .child(idCliente)
         .child('documenti')
@@ -56,6 +59,7 @@ Future<void> eseguiSelezioneEUploadDocumento({
       'nomeFile': nomeFile,
       'urlDownload': downloadUrl,
       'idCliente': idCliente,
+      'studioId': studioId,
       'nomeCliente': nomeCliente,
       'caricatoDaId': idCaricatoDa,
       'caricatoDaNome': nomeCaricatoDa,

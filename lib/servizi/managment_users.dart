@@ -33,4 +33,12 @@ class ProfiloService {
       'lastUpdate': FieldValue.serverTimestamp(),
     });
   }
+
+  // Metodo per recuperare in tempo reale tutti gli utenti dello stesso studio 
+  Stream<QuerySnapshot> ottieniUtentiPerStudio(String studioId) {
+    return _firestore
+        .collection('utenti')
+        .where('studioId', isEqualTo: studioId)
+        .snapshots();
+  }
 }

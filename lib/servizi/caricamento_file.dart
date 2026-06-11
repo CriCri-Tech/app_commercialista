@@ -12,6 +12,7 @@ Future<void> eseguiSelezioneEUploadDocumento({
   required String nomeCliente,     
   required String idCaricatoDa,    
   required String nomeCaricatoDa,  
+  required String studioId,
 }) async {
   try {
     // Selezione del file tramite il file manager del dispositivo.
@@ -37,9 +38,11 @@ Future<void> eseguiSelezioneEUploadDocumento({
     String nomeFileUnivoco = "${timestamp}_$nomeFile";
 
     // Definizione del percorso di archiviazione su Firebase Storage.
-    // I file vengono organizzati in cartelle specifiche per ogni cliente.
+    // I file vengono organizzati in cartelle specifiche per ogni studio, che a sua volta ha sottocartelle per clienti e documenti.
     Reference storageRef = FirebaseStorage.instance
         .ref()
+        .child('studi')
+        .child(studioId)
         .child('clienti')
         .child(idCliente)
         .child('documenti')
@@ -61,6 +64,7 @@ Future<void> eseguiSelezioneEUploadDocumento({
       'nomeCliente': nomeCliente,
       'caricatoDaId': idCaricatoDa,
       'caricatoDaNome': nomeCaricatoDa,
+      'studioId': studioId,
       'dimensioneBytes': result.files.single.size,
       'dataCaricamento': FieldValue.serverTimestamp(),
     };

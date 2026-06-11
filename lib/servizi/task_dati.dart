@@ -4,15 +4,17 @@ class TaskModel {
   final String id;
   final String titolo;
   final String descrizione;
-  final String clienteId;      // ID del cliente associato (RF-06)
+  final String studioId;      // ID dello studio associato
+  final String clienteId;      // ID del cliente associato
   final String clienteNome;    // Nome memorizzato per evitare letture extra
-  final String assegnatoAId;   // UID dell'utente incaricato (RF-04)
+  final String assegnatoAId;   // UID dell'utente incaricato
   final String assegnatoANome; // Nome dell'utente incaricato
   final bool completato;
   final DateTime dataCreazione;
 
   TaskModel({
     required this.id,
+    required this.studioId,
     required this.titolo,
     required this.descrizione,
     required this.clienteId,
@@ -29,6 +31,7 @@ class TaskModel {
     return TaskModel(
       id: doc.id,
       titolo: data['titolo'] ?? '',
+      studioId: data['studioId'] ?? '',
       descrizione: data['descrizione'] ?? '',
       clienteId: data['clienteId'] ?? '',
       clienteNome: data['clienteNome'] ?? '',
@@ -44,6 +47,7 @@ class TaskModel {
     return {
       'titolo': titolo,
       'descrizione': descrizione,
+      'studioId': studioId,
       'clienteId': clienteId,
       'clienteNome': clienteNome,
       'assegnatoAId': assegnatoAId,

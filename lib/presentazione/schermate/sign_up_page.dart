@@ -23,6 +23,7 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confermaPasswordController = TextEditingController();
+  final TextEditingController _studioIdController = TextEditingController();
 
   // Variabile di stato per memorizzare la data di nascita selezionata dall'utente
   DateTime ? _dataDiNascita;
@@ -41,6 +42,7 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
     _emailController.dispose();
     _passwordController.dispose();
     _confermaPasswordController.dispose();
+    _studioIdController.dispose();
     super.dispose();
   }
 
@@ -88,14 +90,14 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
               // Campo Input: Nome
               TextField(
                 controller: _nomeController,
-                decoration: const InputDecoration(labelText: 'Nome', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Nome*', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 16),
 
                 // Campo Input: Cognome
                 TextField(
                   controller: _cognomeController,
-                  decoration: const InputDecoration(labelText: 'Cognome', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Cognome*', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 16),
 
@@ -110,11 +112,21 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                   ),
                   const SizedBox(height: 16),
 
+                  // Campo Input: Studio ID
+                  TextField(
+                    controller: _studioIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Codice Studio*',
+                      border: OutlineInputBorder()
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
                     // Campo Input: Email (con ottimizzazione del tipo di tastiera)
                     TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'Email*', border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 16),
 
@@ -122,7 +134,7 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                       TextField(
                         controller: _passwordController,
                         obscureText: true,
-                        decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+                        decoration: const InputDecoration(labelText: 'Password*', border: OutlineInputBorder()),
                       ),
                       const SizedBox(height: 16),
 
@@ -130,7 +142,7 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                         TextField(
                           controller: _confermaPasswordController,
                           obscureText: true,
-                          decoration: const InputDecoration(labelText: 'Conferma Password', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(labelText: 'Conferma Password*', border: OutlineInputBorder()),
                         ),
                         const SizedBox(height: 16),
 
@@ -147,7 +159,7 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                                 // Testo dinamico: mostra un invito alla selezione o la data formattata in base allo stato
                                 Text(
                                   _dataDiNascita == null ?
-                                  'Seleziona Data di Nascita' :
+                                  'Seleziona Data di Nascita*' :
                                   'Data: ${_dataDiNascita!.day}/${_dataDiNascita!.month}/${_dataDiNascita!.year}',
                                   style: TextStyle(fontSize: 16, color: _dataDiNascita == null ? Colors.grey.shade700 : Colors.black),
                                 ),
@@ -180,13 +192,14 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                               String nomeInserito = _nomeController.text.trim();
                               String cognomeInserito = _cognomeController.text.trim();
                               String usernameInserito = _usernameController.text.trim();
+                              String studioIdInserito = _studioIdController.text.trim();
 
                               if (usernameInserito.isEmpty && nomeInserito.isNotEmpty && cognomeInserito.isNotEmpty) {
                                 usernameInserito = "${nomeInserito.toLowerCase()}.${cognomeInserito.toLowerCase()}";
                               }
 
                               // Validazione Locale dei campi di testo prima di avviare il caricamento
-                              if (emailInserita.isEmpty || passwordInserita.isEmpty || confermaPasswordInserita.isEmpty || nomeInserito.isEmpty || cognomeInserito.isEmpty) {
+                              if (emailInserita.isEmpty || passwordInserita.isEmpty || confermaPasswordInserita.isEmpty || nomeInserito.isEmpty || cognomeInserito.isEmpty || studioIdInserito.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Tutti i campi obbligatori evono essere compilati.'), backgroundColor: Colors.orange),
                                 );
@@ -222,6 +235,7 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                                   cognome: cognomeInserito,
                                   username: usernameInserito,
                                   dataDiNascita: _dataDiNascita!,
+                                  studioId: studioIdInserito,
                                 );
 
                                 // Successo
@@ -237,7 +251,7 @@ class _RegistrazionePageState extends State < RegistrazionePage > {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                      const NexaHomePage(),
+                                      NexaHomePage(studioId: studioIdInserito),
                                     ),
                                   );
                                 }

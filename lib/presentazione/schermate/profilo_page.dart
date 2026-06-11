@@ -17,6 +17,7 @@ class _ProfiloPageState extends State<ProfiloPage> {
   final TextEditingController _cognomeController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _studioIdController = TextEditingController();
   
   // Controller dedicati esclusivamente al cambio password
   final TextEditingController _vecchiaPasswordController = TextEditingController();
@@ -45,6 +46,7 @@ class _ProfiloPageState extends State<ProfiloPage> {
         _cognomeController.text = dati['cognome'] ?? '';
         _usernameController.text = dati['username'] ?? '';
         _emailController.text = dati['email'] ?? '';
+        _studioIdController.text = dati['studioId'] ?? '';
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -152,6 +154,16 @@ class _ProfiloPageState extends State<ProfiloPage> {
                   decoration: const InputDecoration(labelText: 'Nome Utente', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 16),
+                TextField(
+                  controller: _studioIdController,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    labelText: "Codice studio di appartenenza",
+                    border: const OutlineInputBorder(),
+                    fillColor: Colors.grey.shade200,
+                    filled: true
+                  ),
+                ),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,

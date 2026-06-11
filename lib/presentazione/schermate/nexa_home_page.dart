@@ -4,7 +4,9 @@ import 'profilo_page.dart';
 import 'welcome_page.dart';
 
 class NexaHomePage extends StatelessWidget {
-  const NexaHomePage({super.key});
+  final String studioId;
+
+  const NexaHomePage({super.key, required this.studioId});
 
   @override
   Widget build(BuildContext context) {

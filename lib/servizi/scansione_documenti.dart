@@ -58,13 +58,13 @@ class ScansioneDocumenti{
   }
 
   // Metodo per caricare il file PDF generato su Firebase Storage nella cartella del cliente specificato
-  Future<String?> caricaPdfSuStorage(File filePdf, String clientId) async {
+  Future<String?> caricaPdfSuStorage(File filePdf, String clientId, String studioId) async {
     try{
       // Estrazione del nome del file dal percorso completo
       final nomeFile = filePdf.path.split("/").last;
 
       // Destinazione del file
-      final storageRef = _storage.ref().child('clients/$clientId/documents/$nomeFile');
+      final storageRef = _storage.ref().child('studi/$studioId/clienti/$clientId/documenti/$nomeFile');
 
       // Upload del file PDF su Firebase Storage
       final uploadTask = await storageRef.putFile(filePdf);

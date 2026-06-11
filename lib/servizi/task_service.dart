@@ -5,9 +5,10 @@ class TaskService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   //Recupera in tempo reale tutti i task dello studio (Ordinati dal più recente)
-  Stream<List<TaskModel>> get tuttiITaskStream {
+  Stream<List<TaskModel>> tuttiITaskStream(String studioId) {
     return _firestore
         .collection('task')
+        .where('studioId', isEqualTo: studioId)
         .orderBy('dataCreazione', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -16,9 +17,10 @@ class TaskService {
   }
 
   //Ottiene in tempo reale solo le attività di un determinato utente
-  Stream<List<TaskModel>> getTaskAssegnatiA(String utenteId) {
+  Stream<List<TaskModel>> getTaskAssegnatiA(String utenteId, String studioId) {
     return _firestore
         .collection('task')
+        .where('studioId', isEqualTo: studioId)
         .where('assegnatoAId', isEqualTo: utenteId)
         .orderBy('dataCreazione', descending: true)
         .snapshots()
@@ -28,9 +30,10 @@ class TaskService {
   }
 
   //Ottiene i task legati a una specifica scheda cliente (Utile per RF-06)
-  Stream<List<TaskModel>> getTaskPerCliente(String clienteId) {
+  Stream<List<TaskModel>> getTaskPerCliente(String clienteId, String studioId) {
     return _firestore
         .collection('task')
+        .where('studioId', isEqualTo: studioId)
         .where('clienteId', isEqualTo: clienteId)
         .orderBy('dataCreazione', descending: true)
         .snapshots()
