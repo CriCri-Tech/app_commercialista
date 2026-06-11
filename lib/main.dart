@@ -1,19 +1,10 @@
 import 'package:flutter/material.dart';
-// IMPORTA IL PACCHETTO CORE DI FIREBASE
 import 'package:firebase_core/firebase_core.dart'; 
-
-// IMPORTA LA NUOVA LANDING PAGE
-// Nota: adatta questo percorso in base a dove hai salvato il file landing_page.dart
 import 'presentazione/schermate/welcome_page.dart'; 
 
 void main() async {
-  // Assicura che i canali nativi di Flutter siano pronti
   WidgetsFlutterBinding.ensureInitialized();
-
-  // INIZIALIZZA FIREBASE PRIMA DI FAR PARTIRE L'APP
   await Firebase.initializeApp();
-
-  // Quando Firebase è pronto fa partire l'applicazione
   runApp(const MiaApp());
 }
 
@@ -22,14 +13,62 @@ class MiaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Definiamo il colore brand principale
+    const Color nexaBlue = Color(0xFF1E3A8A);
+
     return MaterialApp(
       title: 'Nexa',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E3A8A)),
+        colorScheme: ColorScheme.fromSeed(seedColor: nexaBlue),
         useMaterial3: true,
+        scaffoldBackgroundColor: Colors.grey.shade50, // Uno sfondo leggermente grigio fa risaltare le card bianche
+        
+        // Stile globale per la barra superiore (AppBar)
+        appBarTheme: const AppBarTheme(
+          backgroundColor: nexaBlue,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+
+        // Stile globale per i campi di testo (TextField / TextFormField)
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: const BorderSide(color: nexaBlue, width: 2),
+          ),
+          prefixIconColor: nexaBlue.withOpacity(0.7),
+        ),
+
+        // Stile globale per i bottoni primari (ElevatedButton)
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: nexaBlue,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(55), // Altezza standard
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+
+        // Stile globale per i bottoni secondari (OutlinedButton)
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: nexaBlue,
+            minimumSize: const Size.fromHeight(55),
+            side: const BorderSide(color: nexaBlue, width: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
       ),
-      //Imposta la WelcomePage come prima schermata all'avvio
       home: const WelcomePage(), 
     );
   }

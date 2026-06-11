@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import '../../servizi/gestione_studio.dart';
+import '../../servizi/gestione_studio.dart'; 
+import 'dashboard_page.dart'; // Importazione per il reindirizzamento post-assegnazione
 
 class AssegnaStudioPage extends StatefulWidget {
   const AssegnaStudioPage({super.key});
@@ -17,13 +17,19 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
   final TextEditingController _pivaController = TextEditingController();
   
   bool _isLoading = false; 
-  final GestioneStudioService _studioService = GestioneStudioService(); // Istanza del tuo servizio
+  final GestioneStudioService _studioService = GestioneStudioService(); 
 
   @override
   void dispose() {
     _nomeController.dispose();
     _pivaController.dispose();
     super.dispose();
+  }
+
+  void _pulisciCampi() {
+    _nomeController.clear();
+    _pivaController.clear();
+    _formKey.currentState?.reset();
   }
 
   Future<void> _salvaAssegnazione() async {
@@ -34,11 +40,9 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
         final nomeStudio = _nomeController.text.trim();
         final partitaIva = _pivaController.text.trim();
 
-        // Recupera l'ID dell'utente loggato tramite Firebase Auth
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) throw Exception("Utente non autenticato.");
 
-        // Chiama il tuo Service per creare lo studio
         final codiceInvito = await _studioService.creaStudio(
           nomeStudio, 
           partitaIva, 
@@ -46,24 +50,32 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
         );
 
         if (mounted) {
-          // Mostra un pop-up con il Codice di Invito generato dal Service!
           showDialog(
             context: context,
-            barrierDismissible: false, // Obbliga l'utente a premere il bottone
+            barrierDismissible: false, 
             builder: (context) => AlertDialog(
-              title: const Text('Studio Creato!', style: TextStyle(color: Color(0xFF1E3A8A))),
+              title: Text(
+                'Studio Creato!', 
+                style: TextStyle(color: Theme.of(context).colorScheme.primary)
+              ),
               content: Text(
-                'Lo studio "$nomeStudio" è stato assegnato.\n\nFornisci questo codice ai collaboratori per farli accedere:\n\n$codiceInvito',
+                'Lo studio "$nomeStudio" è stato assegnato.\n\nFornire questo codice ai collaboratori per l\'accesso:\n\n$codiceInvito',
                 style: const TextStyle(fontSize: 16),
               ),
               actions: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Chiude il Dialog
-                    Navigator.pop(context); // Chiude la pagina Assegna Studio
+                    Navigator.pop(context); // Chiusura Dialog
+                    _pulisciCampi(); // Reset form
+                    
+                    // Reindirizzamento alla Dashboard eliminando lo stack precedente
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DashboardPage()),
+                      (Route<dynamic> route) => false,
+                    );
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A)),
-                  child: const Text('OK', style: TextStyle(color: Colors.white)),
+                  child: const Text('OK'), // Stile ereditato dal ThemeData globale
                 ),
               ],
             ),
@@ -86,27 +98,31 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Assegna Studio'),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
-        elevation: 0,
+    final theme = Theme.of(context);
+
+    // Contenitore principale inserito nel body della NexaHomePage
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(32.0),
+          topRight: Radius.circular(32.0),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Identificazione Studio',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
+                  color: theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 24),
@@ -115,7 +131,6 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
                 enabled: !_isLoading,
                 decoration: const InputDecoration(
                   labelText: 'Nome Studio / Ragione Sociale *',
-                  border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.business),
                 ),
                 validator: (value) {
@@ -133,7 +148,6 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
                 maxLength: 11,
                 decoration: const InputDecoration(
                   labelText: 'Partita IVA *',
-                  border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.numbers),
                   hintText: 'Es. 01234567890',
                 ),
@@ -150,34 +164,20 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
               const Spacer(),
               
               _isLoading 
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+                ? const Center(child: CircularProgressIndicator())
                 : Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: const BorderSide(color: Color(0xFF1E3A8A)),
-                          ),
-                          child: const Text(
-                            'Annulla',
-                            style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 16),
-                          ),
+                          onPressed: _pulisciCampi,
+                          child: const Text('Pulisci', style: TextStyle(fontSize: 16)),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _salvaAssegnazione,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E3A8A),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: const Text(
-                            'Assegna',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
+                          child: const Text('Assegna', style: TextStyle(fontSize: 16)),
                         ),
                       ),
                     ],
