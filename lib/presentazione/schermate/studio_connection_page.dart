@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../servizi/gestione_studio.dart'; 
+import 'dashboard_page.dart'; // Importazione per il reindirizzamento post-assegnazione
 
 class AssegnaStudioPage extends StatefulWidget {
   const AssegnaStudioPage({super.key});
@@ -25,7 +26,6 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
     super.dispose();
   }
 
-  // Svuota gli input correnti
   void _pulisciCampi() {
     _nomeController.clear();
     _pivaController.clear();
@@ -54,19 +54,28 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
             context: context,
             barrierDismissible: false, 
             builder: (context) => AlertDialog(
-              title: const Text('Studio Creato!', style: TextStyle(color: Color(0xFF1E3A8A))),
+              title: Text(
+                'Studio Creato!', 
+                style: TextStyle(color: Theme.of(context).colorScheme.primary)
+              ),
               content: Text(
-                'Lo studio "$nomeStudio" è stato assegnato.\n\nFornisci questo codice ai collaboratori per farli accedere:\n\n$codiceInvito',
+                'Lo studio "$nomeStudio" è stato assegnato.\n\nFornire questo codice ai collaboratori per l\'accesso:\n\n$codiceInvito',
                 style: const TextStyle(fontSize: 16),
               ),
               actions: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
-                    _pulisciCampi();
+                    Navigator.pop(context); // Chiusura Dialog
+                    _pulisciCampi(); // Reset form
+                    
+                    // Reindirizzamento alla Dashboard eliminando lo stack precedente
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DashboardPage()),
+                      (Route<dynamic> route) => false,
+                    );
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A)),
-                  child: const Text('OK', style: TextStyle(color: Colors.white)),
+                  child: const Text('OK'), // Stile ereditato dal ThemeData globale
                 ),
               ],
             ),
@@ -89,6 +98,9 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Contenitore principale inserito nel body della NexaHomePage
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -105,12 +117,12 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Identificazione Studio',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
+                  color: theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 24),
@@ -119,7 +131,6 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
                 enabled: !_isLoading,
                 decoration: const InputDecoration(
                   labelText: 'Nome Studio / Ragione Sociale *',
-                  border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.business),
                 ),
                 validator: (value) {
@@ -137,7 +148,6 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
                 maxLength: 11,
                 decoration: const InputDecoration(
                   labelText: 'Partita IVA *',
-                  border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.numbers),
                   hintText: 'Es. 01234567890',
                 ),
@@ -154,34 +164,20 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
               const Spacer(),
               
               _isLoading 
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+                ? const Center(child: CircularProgressIndicator())
                 : Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _pulisciCampi,
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: const BorderSide(color: Color(0xFF1E3A8A)),
-                          ),
-                          child: const Text(
-                            'Pulisci',
-                            style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 16),
-                          ),
+                          child: const Text('Pulisci', style: TextStyle(fontSize: 16)),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _salvaAssegnazione,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E3A8A),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: const Text(
-                            'Assegna',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
+                          child: const Text('Assegna', style: TextStyle(fontSize: 16)),
                         ),
                       ),
                     ],
