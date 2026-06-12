@@ -42,18 +42,21 @@ class GestioneStudioService {
   // Metodo per accedere a uno studio esistente tramite codice di invito
   Future<void> accediAStudio(String codiceInvito, String utenteId) async {
     try {
+      // Ricerca dello studio tramite il codice di invito
       QuerySnapshot query = await _firestore
           .collection('studi')
           .where('codiceInvito', isEqualTo: codiceInvito)
           .limit(1)
           .get();
 
+      // Verifica dell'esistenza dello studio
       if (query.docs.isEmpty) {
         throw Exception("Codice invito non valido o studio inesistente.");
       }
 
       String studioId = query.docs.first.id;
 
+      // Aggiunge l'utente alla lista dei membri dello studio, impostandogli anche il ruolo di default
       await _firestore.collection('studi').doc(studioId).update({
         'membri': FieldValue.arrayUnion([utenteId])
       });

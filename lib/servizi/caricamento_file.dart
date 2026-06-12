@@ -4,9 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Funzione dedicata alla selezione di un documento dal dispositivo,
-/// al suo caricamento su Firebase Storage e al salvataggio dei relativi
-/// dati su Firestore. Prepara anche il payload per le notifiche.
+// Carica un documento su Firebase/Firestore e prepara la notifica
 Future<void> eseguiSelezioneEUploadDocumento({
   required String idCliente,       
   required String nomeCliente,     
@@ -32,13 +30,11 @@ Future<void> eseguiSelezioneEUploadDocumento({
     File file = File(result.files.single.path!);
     String nomeFile = result.files.single.name;
     
-    // Creazione di un timestamp per garantire che il nome del file sia
-    // univoco all'interno del database, evitando sovrascritture.
+    // Creazione di un timestamp per garantire che il nome del file sia univoco all'interno del database, evitando sovrascritture.
     String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
     String nomeFileUnivoco = "${timestamp}_$nomeFile";
 
     // Definizione del percorso di archiviazione su Firebase Storage.
-    // I file vengono organizzati in cartelle specifiche per ogni studio, che a sua volta ha sottocartelle per clienti e documenti.
     Reference storageRef = FirebaseStorage.instance
         .ref()
         .child('studi')
@@ -92,8 +88,7 @@ Future<void> eseguiSelezioneEUploadDocumento({
   } catch (errore) {
     debugPrint("Errore durante il processo di caricamento: $errore");
     
-    // Rilancio dell'errore verso l'esterno in modo che l'interfaccia utente
-    // possa intercettarlo e mostrare il relativo messaggio all'utente.
+    // Rilancio dell'errore verso l'esterno 
     throw Exception("Errore durante il caricamento del file: $errore");
   }
 }

@@ -4,9 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Funzione per il caricamento e l'associazione dei documenti.
-/// Gestisce la selezione del file, l'upload su cloud, il salvataggio su database
-/// e la preparazione del payload per le notifiche push.
+// Metodo che gestisce il caricamento del documento sul cloud e la relativa notifica.
 Future<void> eseguiSelezioneEUploadDocumento({
   required String idCliente,
   required String nomeCliente,
@@ -34,7 +32,6 @@ Future<void> eseguiSelezioneEUploadDocumento({
     String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
     String nomeFileUnivoco = "${timestamp}_$nomeFile";
 
-    // --- UPLOAD SU FIREBASE STORAGE ---
     // Definizione del percorso di destinazione su Firebase Storage, strutturato per cliente.
     Reference storageRef = FirebaseStorage.instance
         .ref()
@@ -53,7 +50,6 @@ Future<void> eseguiSelezioneEUploadDocumento({
     String downloadUrl = await snapshotTask.ref.getDownloadURL();
     debugPrint("File caricato con successo su Storage. URL: $downloadUrl");
 
-    // --- SALVATAGGIO METADATI SU CLOUD FIRESTORE ---
     // Preparazione dei dati del documento per la registrazione nel database.
     final Map<String, dynamic> datiDocumento = {
       'nomeFile': nomeFile,
@@ -74,7 +70,6 @@ Future<void> eseguiSelezioneEUploadDocumento({
 
     debugPrint("Metadati del documento salvati su Firestore con ID: ${documentoRef.id}");
 
-    // --- PREPARAZIONE NOTIFICA PUSH ---
     // Strutturazione del payload necessario per l'invio della notifica al team.
     final mappaNotificaPush = {
       'notification': {

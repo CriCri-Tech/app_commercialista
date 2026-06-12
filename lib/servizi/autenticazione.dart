@@ -14,9 +14,7 @@ class Autenticazione {
   // Stato dell'autenticazione
   Stream<User?> get statoAutenticazione => _istanza.authStateChanges();
 
-  
-  // RF-00 SIGN UP (Registrazione) 
-  
+  // RF-00 SIGN UP (Registrazione)   
   Future<UserCredential> effettuaRegistrazione({
     required String email,
     required String password,
@@ -69,9 +67,7 @@ class Autenticazione {
     }
   }
 
-  
   // RF-01 LOGIN
-  
   Future<UserCredential> effettuaLogin(String emailUtente, String passwordUtente) async {
     try {
       UserCredential credenziali = await _istanza.signInWithEmailAndPassword(
@@ -92,9 +88,7 @@ class Autenticazione {
     }
   }
 
-  
   // RF-02 LOGOUT
-  
   Future<String> effettuaLogout() async {
     try {
       await _istanza.signOut();
@@ -104,9 +98,7 @@ class Autenticazione {
     }
   }
 
-  
   // RF-03 RECUPERO PASSWORD
-  
   Future<String> recuperaPassword(String emailUtente) async {
     try {
       await _istanza.sendPasswordResetEmail(email: emailUtente);
@@ -124,9 +116,7 @@ class Autenticazione {
     }
   }
 
-
-  // METODI PER GESTIONE PROFILO 
-
+  // METODI PER GESTIONE PROFILO:
   // Ottiene i dati completi dell'utente da Firestore
   Future<Map<String, dynamic>?> ottieniDatiUtente() async {
     User? user = _istanza.currentUser;
