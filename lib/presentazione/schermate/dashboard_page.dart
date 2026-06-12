@@ -10,6 +10,7 @@ import '../../servizi/autenticazione.dart';
 import '../../servizi/scansione_documenti.dart';
 import 'widget/dialog_page.dart';
 import 'document_page.dart';
+import 'anagrafica_clienti_page.dart'; // Controlla il percorso corretto del file
 
 import 'profilo_page.dart';
 import 'welcome_page.dart';
@@ -208,7 +209,17 @@ class _DashboardPageState extends State<DashboardPage> {
               leading: const Icon(Icons.person_search),
               title: const Text('Cerca Clienti'),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(context); // Chiude il drawer laterale
+                // Naviga verso la terza schermata passando i dati richiesti
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AnagraficaClientiPage(
+                      studioId: _studioId!,
+                      servizioClienti: _servizioClienti,
+                    ),
+                  ),
+                );
               },
             ),
             const Divider(),
