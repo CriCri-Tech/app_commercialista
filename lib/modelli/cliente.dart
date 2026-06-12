@@ -5,6 +5,7 @@ import "package:cloud_firestore/cloud_firestore.dart";
 class Cliente {
   String? id; // ID univoco del cliente
   String companyName; // Nome dell'azienda
+  String nomeECognome; // Nome e cognome del cliente
   String studioId; // ID dello studio associato al cliente 
   String vatNumber; // Partita IVA
   String taxCode; // Codice fiscale
@@ -20,6 +21,7 @@ class Cliente {
     this.id,
     required this.studioId,
     required this.companyName,
+    required this.nomeECognome,
     required this.vatNumber,
     required this.taxCode,
     required this.pec,
@@ -36,6 +38,7 @@ class Cliente {
       id: documentId,
       studioId: data['studioId'] ?? '',
       companyName: data['companyName'] ?? '',
+      nomeECognome: data['nomeECognome'] ?? '',
       vatNumber: data['vatNumber'] ?? '',
       taxCode: data['taxCode'] ?? '',
       pec: data['pec'] ?? '',

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart'; // Necessario per debugPrint
+import 'package:flutter/foundation.dart'; // Necessario per debugPrint e Uint8List
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,21 +13,24 @@ Future<void> eseguiSelezioneEUploadDocumento({
   required String studioId,
 }) async {
   try {
-    // Selezione del file tramite il file manager del dispositivo.
+    // MODIFICA 1: Aggiunto withData: true per caricare i byte in memoria 
+    // e aggirare i blocchi di sicurezza delle cartelle su Android/iOS.
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.any,
+      type: FileType.custom, // Limitato ai PDF come richiesto dai tuoi test
+      allowedExtensions: ['pdf'],
       allowMultiple: false, 
+      withData: true, 
     );
 
     // Verifica per interrompere il processo se l'utente chiude il selettore
     // senza aver scelto alcun file.
-    if (result == null || result.files.isEmpty || result.files.single.path == null) {
+    if (result == null || result.files.isEmpty) {
       debugPrint("Selezione del file annullata dall'utente.");
       return;
     }
 
-    // Estrazione del percorso locale e del nome originale del file.
-    File file = File(result.files.single.path!);
+    // MODIFICA 2: Estrazione dei byte invece del percorso locale
+    Uint8List? fileBytes = result.files.single.bytes;
     String nomeFile = result.files.single.name;
     
     // Creazione di un timestamp per garantire che il nome del file sia univoco all'interno del database, evitando sovrascritture.
@@ -44,8 +47,8 @@ Future<void> eseguiSelezioneEUploadDocumento({
         .child('documenti')
         .child(nomeFileUnivoco);
 
-    // Avvio del caricamento fisico del file sul server.
-    UploadTask uploadTask = storageRef.putFile(file);
+    // MODIFICA 3: Avvio del caricamento fisico usando putData invece di putFile
+    UploadTask uploadTask = storageRef.putData(fileBytes);
     TaskSnapshot snapshotTask = await uploadTask;
     
     // Recupero dell'indirizzo web generato per accedere al file appena caricato.
