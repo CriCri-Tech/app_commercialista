@@ -32,6 +32,12 @@ Future<void> eseguiSelezioneEUploadDocumento({
     // MODIFICA 2: Estrazione dei byte invece del percorso locale
     Uint8List? fileBytes = result.files.single.bytes;
     String nomeFile = result.files.single.name;
+
+    // Gestione del caso in cui fileBytes sia null
+    if (fileBytes == null) {
+      print("Errore: I byte del file sono nulli. Impossibile caricare.");
+      return; 
+    }
     
     // Creazione di un timestamp per garantire che il nome del file sia univoco all'interno del database, evitando sovrascritture.
     String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
