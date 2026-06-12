@@ -7,6 +7,8 @@ import '../../modelli/cliente.dart';
 import '../../servizi/gestione_scadenze.dart';
 import '../../servizi/gestione_clienti.dart';
 import '../../servizi/autenticazione.dart';
+import '../../servizi/scansione_documenti.dart';
+import 'widget/dialog_page.dart';
 
 import 'profilo_page.dart';
 import 'welcome_page.dart';
@@ -124,8 +126,61 @@ class _DashboardPageState extends State<DashboardPage> {
             ListTile(
               leading: const Icon(Icons.document_scanner),
               title: const Text('Scansiona Documenti'),
-              onTap: () {
+              onTap: () async {
+                // Chiude il drawer laterale
                 Navigator.pop(context);
+
+                try {
+                  final scanner = ScansioneDocumenti();
+                  final filePdf = await scanner.avviaScannerECollezionaPdf();
+
+                  if (filePdf != null) {
+                    // Controlla che il widget sia ancora montato prima di mostrare UI
+                    if (!context.mounted) return;
+
+                    //Apre il dialog e "cattura" l'ID del cliente selezionato
+                    // Apre il dialog esterno passando il context, l'ID dello studio e l'istanza del servizio
+                      final idClienteSelezionato = await mostraDialogSelezioneCliente(
+                        context: context,
+                        studioId: _studioId!,
+                        servizioClienti: _servizioClienti,
+                      );
+
+                    if (idClienteSelezionato != null && idClienteSelezionato.isNotEmpty) {
+                      //L'utente ha scelto un cliente, procediamo all'upload
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Caricamento in corso...'))
+                      );
+
+                      // Esegue l'upload passando l'ID recuperato
+                      final urlDownload = await scanner.caricaPdfSuStorage(
+                        filePdf, 
+                        idClienteSelezionato, 
+                        _studioId!
+                      );
+
+                      if (urlDownload != null && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Documento assegnato e caricato con successo!'))
+                        );
+                      }
+                    } else {
+                      // L'utente ha premuto "Annulla" o chiuso il dialog
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Caricamento annullato. Nessun cliente selezionato.'))
+                        );
+                      }
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Errore durante la scansione: $e'))
+                    );
+                  }
+                }
               },
             ),
             ListTile(
@@ -134,6 +189,19 @@ class _DashboardPageState extends State<DashboardPage> {
               onTap: () {
                 Navigator.pop(context);
               },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.person_add),
+              title: const Text('Aggiungi Cliente'),
+              onTap: () {
+                Navigator.pop(context); // Chiude il menu laterale
+                mostraDialogAggiungiCliente(
+                  context: context,
+                  studioId: _studioId!,
+                  servizioClienti: _servizioClienti,
+                );
+              },      
             ),
             ListTile(
               leading: const Icon(Icons.person_search),
@@ -273,7 +341,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 subtitle: Text("P.IVA: ${cliente.vatNumber}"),
                 trailing: IconButton(
                   icon: const Icon(Icons.folder_shared, color: Color(0xFF1E3A8A)),
-                  onPressed: () {},
+                  onPressed: () {
+
+                    //TODO: Implementa la visualizzazione dei documenti associati al cliente IN UNA NUOVA SCHERMATA, passando l'ID del cliente selezionato
+                     
+
+                  },
                 ),
               ),
             );
