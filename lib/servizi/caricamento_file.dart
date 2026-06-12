@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart'; // Necessario per debugPrint e Uint8List
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -13,7 +12,7 @@ Future<void> eseguiSelezioneEUploadDocumento({
   required String studioId,
 }) async {
   try {
-    // MODIFICA 1: Aggiunto withData: true per caricare i byte in memoria 
+    //Aggiunto withData: true per caricare i byte in memoria 
     // e aggirare i blocchi di sicurezza delle cartelle su Android/iOS.
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom, // Limitato ai PDF come richiesto dai tuoi test
@@ -29,7 +28,7 @@ Future<void> eseguiSelezioneEUploadDocumento({
       return;
     }
 
-    // MODIFICA 2: Estrazione dei byte invece del percorso locale
+    //Estrazione dei byte invece del percorso locale
     Uint8List? fileBytes = result.files.single.bytes;
     String nomeFile = result.files.single.name;
 
@@ -53,7 +52,7 @@ Future<void> eseguiSelezioneEUploadDocumento({
         .child('documenti')
         .child(nomeFileUnivoco);
 
-    // MODIFICA 3: Avvio del caricamento fisico usando putData invece di putFile
+    //Avvio del caricamento fisico usando putData invece di putFile
     UploadTask uploadTask = storageRef.putData(fileBytes);
     TaskSnapshot snapshotTask = await uploadTask;
     

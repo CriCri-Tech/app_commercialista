@@ -9,6 +9,7 @@ import '../../servizi/gestione_clienti.dart';
 import '../../servizi/autenticazione.dart';
 import '../../servizi/scansione_documenti.dart';
 import 'widget/dialog_page.dart';
+import 'document_page.dart';
 
 import 'profilo_page.dart';
 import 'welcome_page.dart';
@@ -342,10 +343,22 @@ class _DashboardPageState extends State<DashboardPage> {
                 trailing: IconButton(
                   icon: const Icon(Icons.folder_shared, color: Color(0xFF1E3A8A)),
                   onPressed: () {
-
-                    //TODO: Implementa la visualizzazione dei documenti associati al cliente IN UNA NUOVA SCHERMATA, passando l'ID del cliente selezionato
-                     
-
+                    if (cliente.id != null) {
+                          // Naviga verso il nuovo file esterno passando i dati necessari
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DocumentiClientePage(
+                                idCliente: cliente.id!,
+                                nomeCliente: cliente.companyName,
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Impossibile aprire i documenti: ID cliente mancante.'))
+                          );
+                        }
                   },
                 ),
               ),

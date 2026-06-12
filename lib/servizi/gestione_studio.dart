@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
-// Sostituisci con il percorso corretto del tuo modello
 import '../modelli/studio_model.dart'; 
 
 class GestioneStudioService {
@@ -16,7 +15,7 @@ class GestioneStudioService {
       StudioModel nuovoStudio = StudioModel(
         id: '', // L'ID verrà generato automaticamente da Firestore
         nome: nomeStudio,
-        partitaIva: partitaIva, // <-- Aggiunto
+        partitaIva: partitaIva, 
         codiceInvito: codiceInvito,
         adminId: utenteCreatoreId,
         membri: [utenteCreatoreId], // Il creatore è il primo membro
