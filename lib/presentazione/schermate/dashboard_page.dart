@@ -7,10 +7,13 @@ import '../../modelli/cliente.dart';
 import '../../servizi/gestione_scadenze.dart';
 import '../../servizi/gestione_clienti.dart';
 import '../../servizi/autenticazione.dart';
-import '../../servizi/scansione_documenti.dart';
-import 'widget/dialog_page.dart';
+import '../../servizi/scansione_documenti.dart'; 
+import 'widget/aggiungi_cliente_dialog.dart';
+import 'widget/selezione_cliente_dialog.dart';
 import 'document_page.dart';
-import 'anagrafica_clienti_page.dart'; // Controlla il percorso corretto del file
+import 'anagrafica_clienti_page.dart'; 
+import 'cerca_documenti_page.dart';
+import '../../servizi/gestione_documenti.dart';
 
 import 'profilo_page.dart';
 import 'welcome_page.dart';
@@ -29,6 +32,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   final ServizioScadenze _servizioScadenze = ServizioScadenze();
   final ServizioClienti _servizioClienti = ServizioClienti();
+  final DocumentService _servizioDocumenti = DocumentService();
 
   @override
   void initState() {
@@ -186,12 +190,24 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.search),
+              leading: const Icon(Icons.folder_shared), // Icona più specifica per i documenti condivisi
               title: const Text('Cerca Documenti'),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(context); // Chiude il drawer laterale
+                
+                // Navigazione verso la pagina di ricerca documenti passando i servizi necessari
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CercaDocumentiPage(
+                      studioId: _studioId!,
+                      documentService: _servizioDocumenti, //
+                    ),
+                  ),
+                );
               },
             ),
+            const Divider(),
 
             ListTile(
               leading: const Icon(Icons.person_add),
@@ -207,7 +223,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             ListTile(
               leading: const Icon(Icons.person_search),
-              title: const Text('Cerca Clienti'),
+              title: const Text('Cerca e Modifica Clienti'),
               onTap: () {
                 Navigator.pop(context); // Chiude il drawer laterale
                 // Naviga verso la terza schermata passando i dati richiesti

@@ -5,7 +5,7 @@ import '../modelli/studio_model.dart';
 class GestioneStudioService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Metodo per creare un nuovo studio (AGGIORNATO con Partita IVA)
+  // Metodo per creare un nuovo studio 
   Future<String> creaStudio(String nomeStudio, String partitaIva, String utenteCreatoreId) async {
     try {
       // Genera un codice di invito univoco di 6 caratteri alfanumerici

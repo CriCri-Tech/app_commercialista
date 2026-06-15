@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Importato per recuperare i dati dello studio
 import 'package:nexa/servizi/autenticazione.dart';
 
 class ProfiloPage extends StatefulWidget {
@@ -10,12 +11,14 @@ class ProfiloPage extends StatefulWidget {
 
 class _ProfiloPageState extends State<ProfiloPage> {
   final Autenticazione _auth = Autenticazione();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   final _nomeController = TextEditingController();
   final _cognomeController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _studioIdController = TextEditingController();
+  final _codiceInvitoController = TextEditingController();
   
   final _vecchiaPasswordController = TextEditingController();
   final _nuovaPasswordController = TextEditingController();
@@ -32,20 +35,40 @@ class _ProfiloPageState extends State<ProfiloPage> {
 
   Future<void> _caricaDati() async {
     try {
+      // 1. Ottieni i dati dell'utente autenticato
       final dati = await _auth.ottieniDatiUtente();
       if (dati != null) {
         _nomeController.text = dati['nome'] ?? '';
         _cognomeController.text = dati['cognome'] ?? '';
         _usernameController.text = dati['username'] ?? '';
         _emailController.text = dati['email'] ?? '';
-        _studioIdController.text = dati['studioId'] ?? '';
+        
+        final String? studioId = dati['studioId'];
+        _studioIdController.text = studioId ?? '';
+
+        // 2. Se l'utente è legato a uno studio, recupera il codice di invito dalla collezione 'studi'
+        if (studioId != null && studioId.isNotEmpty) {
+          DocumentSnapshot studioDoc = await _firestore.collection('studi').doc(studioId).get();
+          
+          if (studioDoc.exists && studioDoc.data() != null) {
+            final datiStudio = studioDoc.data() as Map<String, dynamic>;
+            // Imposta il codice invito recuperato dallo studio nel controller corretto
+            _codiceInvitoController.text = datiStudio['codiceInvito'] ?? 'Non disponibile';
+          } else {
+            _codiceInvitoController.text = 'Studio non trovato';
+          }
+        } else {
+          _codiceInvitoController.text = 'Nessuno studio assegnato';
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Errore nel caricamento dati")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Errore nel caricamento dati: ${e.toString()}")),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -62,22 +85,43 @@ class _ProfiloPageState extends State<ProfiloPage> {
               children: [
                 const Text("Dati Personali", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
                 const SizedBox(height: 16),
+                // nome
                 TextField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome')),
                 const SizedBox(height: 16),
+                // cognome
                 TextField(controller: _cognomeController, decoration: const InputDecoration(labelText: 'Cognome')),
                 const SizedBox(height: 16),
+                // username
                 TextField(controller: _usernameController, decoration: const InputDecoration(labelText: 'Nome Utente')),
                 const SizedBox(height: 16),
+                
+                // id studio (Sola lettura)
                 TextField(
                   controller: _studioIdController,
                   readOnly: true,
                   decoration: InputDecoration(
-                    labelText: "Codice studio di appartenenza",
+                    labelText: "ID Interno Studio",
                     fillColor: Colors.grey.shade200,
                     filled: true
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // Codice Invito dello Studio (Sola lettura - ORA FUNZIONANTE)
+                TextField(
+                  controller: _codiceInvitoController,
+                  readOnly: true,
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                  decoration: InputDecoration(
+                    labelText: "Codice invito dello studio (da dare ai collaboratori)",
+                    fillColor: Colors.grey.shade200,
+                    filled: true,
+                    prefixIcon: const Icon(Icons.vpn_key),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // email
                 TextField(controller: _emailController, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Email')),
                 
                 const Padding(
