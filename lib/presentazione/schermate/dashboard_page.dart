@@ -16,6 +16,7 @@ import 'widget/selezione_cliente_dialog.dart';
 import 'widget/aggiungi_scadenza_dialog.dart'; 
 import 'widget/conferma_eliminazione_dialog.dart'; 
 import 'widget/dettagli_cliente_dialog.dart';
+import 'widget/conferma_completamento_dialog.dart';
 
 import 'document_page.dart';
 import 'anagrafica_clienti_page.dart'; 
@@ -23,7 +24,7 @@ import 'cerca_documenti_page.dart';
 import 'profilo_page.dart';
 import 'welcome_page.dart';
 
-// Rappresenta la pagina principale della dashboard dello studio professionale.
+/// Rappresenta la pagina principale della dashboard dello studio professionale.
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -509,7 +510,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       constraints: const BoxConstraints(),
                     ),
                     
-                    // Bottone condizionale per segnare la scadenza come completata (disponibile solo se attiva)
+                    // Bottone condizionale per segnare la scadenza come completata (reindirizza al dialog esterno)
                     if (!isCompletata && !isScaduta) ...[
                       const SizedBox(width: 8),
                       IconButton(
@@ -517,22 +518,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         tooltip: 'Segna come completata',
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
-                        onPressed: () async {
-                          try {
-                            await _servizioScadenze.segnaComeCompletata(scadenza.id!);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Scadenza contrassegnata come completata.')),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Errore nel completamento: $e')),
-                              );
-                            }
-                          }
-                        },
+                        onPressed: () => mostraDialogConfermaCompletamento(
+                          context: context,
+                          scadenza: scadenza,
+                          servizioScadenze: _servizioScadenze,
+                        ),
                       ),
                     ],
 
