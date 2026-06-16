@@ -1,22 +1,22 @@
-// Pacchetto che permette di sinctronizzare i dati tra l'app e il database in tempo reale
+// Pacchetto necessario per la gestione dei timestamp e la sincronizzazione con Cloud Firestore
 import "package:cloud_firestore/cloud_firestore.dart";
 
-// Classe che rappresenta il singolo cliente
+/// Classe modello che rappresenta l'entità di un singolo Cliente all'interno del sistema.
 class Cliente {
-  String? id; // ID univoco del cliente
-  String companyName; // Nome dell'azienda
-  String nomeECognome; // Nome e cognome del cliente
-  String studioId; // ID dello studio associato al cliente 
-  String vatNumber; // Partita IVA
-  String taxCode; // Codice fiscale
-  String pec;
-  String sdiCode;
-  String phone;
-  String email;
-  String address;
-  DateTime createdAt; // Data di creazione del cliente
+  String? id;            // Identificativo univoco del documento all'interno di Firestore
+  String companyName;    // Ragione sociale o nome dell'azienda del cliente
+  String nomeECognome;   // Nome e cognome del referente o del titolare
+  String studioId;       // Identificativo dello studio professionale associato al cliente
+  String vatNumber;      // Partita IVA del cliente
+  String taxCode;        // Codice Fiscale del cliente
+  String pec;            // Indirizzo di Posta Elettronica Certificata
+  String sdiCode;        // Codice destinatario SDI per la fatturazione elettronica
+  String phone;          // Recapito telefonico
+  String email;          // Indirizzo email ordinario
+  String address;        // Indirizzo della sede legale o operativa
+  DateTime createdAt;    // Data e ora di censimento del cliente nel sistema
 
-  // Metodo costruttore
+  /// Costruttore standard per l'inizializzazione di tutti i campi dell'istanza Cliente.
   Cliente({
     this.id,
     required this.studioId,
@@ -32,7 +32,8 @@ class Cliente {
     required this.createdAt, 
   });
 
-  // Metodo per convertire un documento Firestore in un oggetto Cliente
+  /// Metodo factory per convertire una mappa di dati grezzi proveniente da Firestore
+  /// in una istanza tipizzata della classe [Cliente].
   factory Cliente.fromMap(Map<String, dynamic> data, String documentId) {
     return Cliente(
       id: documentId,
@@ -46,15 +47,20 @@ class Cliente {
       phone: data['phone'] ?? '',
       email: data['email'] ?? '',
       address: data['address'] ?? '',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      // Gestione del casting sicuro da Timestamp di Firestore a DateTime di Dart
+      createdAt: data['createdAt'] != null 
+          ? (data['createdAt'] as Timestamp).toDate() 
+          : DateTime.now(),
     );
   }
 
-  // Metodo per convertire un oggetto Cliente in una mappa da salvare su Firestore
+  /// Converte l'istanza corrente della classe [Cliente] in una mappa [Map]
+  /// di coppie chiave/valore pronta per essere salvata o aggiornata su Cloud Firestore.
   Map<String, dynamic> toMap() {
     return {
       'studioId': studioId,
       'companyName': companyName,
+      'nomeECognome': nomeECognome, 
       'vatNumber': vatNumber,
       'taxCode': taxCode,
       'pec': pec,
@@ -62,6 +68,7 @@ class Cliente {
       'phone': phone,
       'email': email,
       'address': address,
+      // Conversione dell'oggetto DateTime nel rispettivo Timestamp nativo di Firebase
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }

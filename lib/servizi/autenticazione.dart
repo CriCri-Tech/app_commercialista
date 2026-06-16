@@ -1,20 +1,22 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+// Classe dedicata all'interazione con Firebase Authentication e Cloud Firestore.
 class Autenticazione {
-  // Istanze di autenticazione di Firebase
+  // Istanza principale di Firebase Authentication.
   final FirebaseAuth _istanza = FirebaseAuth.instance;
 
-  // Lettura dell'utente tramite un getter
-  User? get utenteCorrente => _istanza.currentUser;
-
-  // Database
+  // Istanza principale di Cloud Firestore.
   final FirebaseFirestore _database = FirebaseFirestore.instance;
 
-  // Stato dell'autenticazione
+  // Recupera l'utente attualmente autenticato nel sistema.
+  User? get utenteCorrente => _istanza.currentUser;
+
+  // Fornisce uno stream continuo per monitorare i cambiamenti di stato dell'autenticazione.
   Stream<User?> get statoAutenticazione => _istanza.authStateChanges();
 
-  // RF-00 SIGN UP (Registrazione)   
+  // RF-00 SIGN UP (Registrazione)
   Future<UserCredential> effettuaRegistrazione({
     required String email,
     required String password,
@@ -25,7 +27,6 @@ class Autenticazione {
     String ruolo = 'utente',
   }) async {
     try {
-      // Tenta la creazione dell'account su Firebase Auth
       UserCredential credenziali = await _istanza.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -34,10 +35,8 @@ class Autenticazione {
       User? nuovoUtente = credenziali.user;
 
       if (nuovoUtente != null) {
-        // Aggiorna il profilo dell'utente con Nome e Cognome
         await nuovoUtente.updateDisplayName("$nome $cognome");
 
-        // Salva i dati anagrafici, il ruolo e l'username su Cloud Firestore
         await _database.collection('utenti').doc(nuovoUtente.uid).set({
           'nome': nome,
           'cognome': cognome,
@@ -49,42 +48,45 @@ class Autenticazione {
         });
       }
       
-      // Ritorniamo le credenziali alla UI per confermare il successo
       return credenziali;
       
     } on FirebaseAuthException catch (errore) {
       if (errore.code == 'weak-password') {
-        throw Exception('La password fornita è troppo debole (minimo 6 caratteri).');
+        throw Exception('La password fornita non soddisfa i requisiti minimi di sicurezza (minimo 6 caratteri).');
       } else if (errore.code == 'email-already-in-use') {
-        throw Exception('Esiste già un account registrato con questa email.');
+        throw Exception('Risulta già un account registrato con l\'indirizzo email fornito.');
       } else if (errore.code == 'invalid-email') {
-        throw Exception('Il formato dell\'email non è valido.');
+        throw Exception('Il formato dell\'indirizzo email inserito non è valido.');
       } else {
-        throw Exception('Errore durante la registrazione: ${errore.message}');
+        throw Exception('Si è verificato un errore durante la registrazione: ${errore.message}');
       }
     } catch (errore) {
-      throw Exception('Errore imprevisto durante il salvataggio dei dati del profilo.');
+      throw Exception('Errore di sistema imprevisto durante il salvataggio dei dati del profilo.');
     }
   }
 
   // RF-01 LOGIN
-  Future<UserCredential> effettuaLogin(String emailUtente, String passwordUtente) async {
+  Future<UserCredential> effettuaLogin(String emailUtente, String passwordUtente, {bool ricordami = false}) async {
     try {
       UserCredential credenziali = await _istanza.signInWithEmailAndPassword(
         email: emailUtente, 
         password: passwordUtente,
       );
+
+      // Gestione del Ricordami al login andato a buon fine
+      await impostaRicordami(ricordami, email: emailUtente);
+
       return credenziali;
     } on FirebaseAuthException catch (errore) {
       if (errore.code == 'user-not-found' || errore.code == 'invalid-email') {
-        throw Exception('Nessun account trovato con questa email.');
+        throw Exception('Non è stato individuato alcun account associato a questa email.');
       } else if (errore.code == 'wrong-password' || errore.code == 'invalid-credential') {
-        throw Exception('La password o l\'email inserita è errata.');
+        throw Exception('Le credenziali fornite (email o password) risultano errate.');
       } else {
-        throw Exception('Errore durante il tentativo di accesso: ${errore.message}');
+        throw Exception('Errore di sistema durante il tentativo di accesso: ${errore.message}');
       }
     } catch (errore) {
-      throw Exception('Impossibile completare il login. Controlla la tua connessione.');
+      throw Exception('Impossibile completare la procedura di login. Si prega di verificare la connessione di rete.');
     }
   }
 
@@ -92,9 +94,14 @@ class Autenticazione {
   Future<String> effettuaLogout() async {
     try {
       await _istanza.signOut();
+      
+      // Quando l'utente effettua il logout volontario resettiamo lo stato automatico
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('ricordami', false);
+      
       return "Disconnessione effettuata con successo.";
     } catch (errore) {
-      throw Exception('Impossibile effettuare il logout in questo momento. Riprova.');
+      throw Exception('Impossibile completare la disconnessione al momento. Si prega di riprovare.');
     }
   }
 
@@ -102,22 +109,21 @@ class Autenticazione {
   Future<String> recuperaPassword(String emailUtente) async {
     try {
       await _istanza.sendPasswordResetEmail(email: emailUtente);
-      return "Email di recupero inviata con successo a: $emailUtente";
+      return "Istruzioni per il recupero inviate con successo all'indirizzo: $emailUtente";
     } on FirebaseAuthException catch (errore) {
       if (errore.code == 'user-not-found') {
-        throw Exception('Nessun utente registrato con questa email.');
+        throw Exception('Non risulta alcun utente registrato con l\'indirizzo email specificato.');
       } else if (errore.code == 'invalid-email') {
-        throw Exception('Il formato dell\'indirizzo email inserito non è valido.');
+        throw Exception('Il formato dell\'indirizzo email fornito non è valido.');
       } else {
-        throw Exception('Errore durante l\'invio: ${errore.message}');
+        throw Exception('Errore di sistema durante l\'invio della richiesta: ${errore.message}');
       }
     } catch (errore) {
-      throw Exception('Impossibile inviare l\'email di recupero. Riprova più tardi.');
+      throw Exception('Impossibile processare la richiesta di recupero. Riprovare successivamente.');
     }
   }
 
-  // METODI PER GESTIONE PROFILO:
-  // Ottiene i dati completi dell'utente da Firestore
+  // METODI PER LA GESTIONE DEL PROFILO
   Future<Map<String, dynamic>?> ottieniDatiUtente() async {
     User? user = _istanza.currentUser;
     if (user != null) {
@@ -127,7 +133,6 @@ class Autenticazione {
     return null;
   }
 
-  // Aggiorna i dati anagrafici su Firestore e il DisplayName su Auth
   Future<void> aggiornaDatiUtente({
     required String nome,
     required String cognome,
@@ -135,14 +140,12 @@ class Autenticazione {
     required String email,
   }) async {
     User? user = _istanza.currentUser;
-    if (user == null) throw Exception("Utente non connesso");
+    if (user == null) throw Exception("Nessuna sessione utente attiva riscontrata.");
 
-    // Se l'email è cambiata, aggiorna su Firebase Auth
     if (email != user.email) {
       await user.verifyBeforeUpdateEmail(email);
     }
 
-    // Aggiorna Firestore
     await _database.collection('utenti').doc(user.uid).update({
       'nome': nome,
       'cognome': cognome,
@@ -150,36 +153,56 @@ class Autenticazione {
       'email': email,
     });
 
-    // Aggiorna DisplayName su Auth
     await user.updateDisplayName("$nome $cognome");
   }
 
-  // Aggiorna la password ma prima chiede a Firebase se la vecchia è corretta
   Future<void> aggiornaPasswordConVerifica(String vecchiaPassword, String nuovaPassword) async {
     User? user = _istanza.currentUser;
-    // Se per qualche motivo non ho l'utente o la sua email, blocco tutto
-    if (user == null || user.email == null) throw Exception("Utente non connesso");
+    
+    if (user == null || user.email == null) {
+      throw Exception("Nessuna sessione utente attiva o indirizzo email non disponibile.");
+    }
 
     try {
-      // Creo le credenziali mescolando la sua email attuale e la password vecchia che ha appena digitato
       AuthCredential credenziali = EmailAuthProvider.credential(
         email: user.email!, 
         password: vecchiaPassword
       );
 
-      // Ri-autentico l'utente. Se la password vecchia è sbagliata, Firebase lancia un errore qui
       await user.reauthenticateWithCredential(credenziali);
-
-      // Se il codice arriva qui, significa che la vecchia password era giusta dunque via libera per la nuova
       await user.updatePassword(nuovaPassword);
       
     } on FirebaseAuthException catch (e) {
-      // Intercetto gli errori specifici di password errata per dare un messaggio più chiaro in italiano
       if (e.code == 'invalid-credential' || e.code == 'wrong-password') {
-        throw Exception("La vecchia password inserita non è corretta.");
+        throw Exception("La password di sicurezza attuale inserita non risulta corretta.");
       }
-      // Se è un altro errore, lo rimando su così com'è
-      throw Exception(e.message);
+      throw Exception("Errore durante l'aggiornamento della password: ${e.message}");
     }
+  }
+
+  // FUNZIONI DI SUPPORTO PER SHERED PREFERENCES
+
+  // Salva la scelta dell'utente (se ha spuntato "Ricordami" o no)
+  Future<void> impostaRicordami(bool valore, {String? email}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('ricordami', valore);
+    
+    if (valore && email != null) {
+      await prefs.setString('email_salvata', email);
+    } else {
+      await prefs.remove('email_salvata');
+    }
+  }
+
+  // Controlla se al riavvio dell'app la funzione "Ricordami" era attiva
+  Future<bool> isRicordamiAttivo() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('ricordami') ?? false; 
+  }
+
+  // Recupera l'email salvata per metterla nel TextField del login
+  Future<String?> getEmailSalvata() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('email_salvata');
   }
 }

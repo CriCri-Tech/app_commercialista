@@ -106,7 +106,7 @@ class ServizioScansioneBiglietto {
     return '';
   }
 
-  /// Chiusura delle risorse
+  // Chiusura delle risorse
   void dispose() {
     _textRecognizer.close();
   }

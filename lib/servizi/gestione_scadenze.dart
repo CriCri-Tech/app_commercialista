@@ -1,104 +1,138 @@
-// Pacchetto che permette di sinctronizzare i dati tra l'app e il database in tempo reale
+// Pacchetto per la sincronizzazione dei dati in tempo reale con Firebase Firestore
 import "package:cloud_firestore/cloud_firestore.dart";
 
-// Importazione della classe Scadenza dalla cartella lib/modelli
+// Importazione del modello della classe Scadenza
 import "../modelli/scadenza.dart";
 
-// Pacchetto che permette il debugPrint
+// Pacchetto per l'utilizzo delle funzioni di debug del framework
 import 'package:flutter/foundation.dart';
 
-// Classe che rappresenta il servizio di gestione delle scadenze
-class ServizioScadenze{
-  // Riferimento all'area di memoria del database dedicata alle scadenze
+// Classe di servizio preposta alla gestione e persistenza delle scadenze sul database Cloud Firestore.
+class ServizioScadenze {
+  // Riferimento alla collezione 'deadlines' presente nel database Firebase
   final CollectionReference _scadenzeCollection = FirebaseFirestore.instance.collection('deadlines');
 
-  // Metodo per aggiungere una scadenza al database
-  Future <void> aggiungiScadenza(Scadenza scadenza) async{
-    try{
-      // Dopo aver convertito l'oggetto Scadenza in una mappa, lo aggiunge alla collezione 'deadlines' del database
+  // Inserisce una nuova scadenza all'interno della collezione Firestore.
+  Future<void> aggiungiScadenza(Scadenza scadenza) async {
+    try {
       await _scadenzeCollection.add(scadenza.toMap());
-    } catch(e){
+    } catch (e) {
       debugPrint("Errore durante l'aggiunta della scadenza: $e");
       rethrow;
     }
   }
 
-  // Metodo per modificare una scadenza esistente
-  Future <void> modificaScadenza(Scadenza scadenza) async{
-    try{
-      // Accede al documento della scadenza tramite il suo ID e aggiorna i suoi dati con quelli forniti
+  // Aggiorna i dati di una scadenza esistente sul database Firestore.
+  Future<void> modificaScadenza(Scadenza scadenza) async {
+    try {
       await _scadenzeCollection.doc(scadenza.id).update(scadenza.toMap());
-    } catch(e){
+    } catch (e) {
       debugPrint("Errore durante la modifica della scadenza: $e");
       rethrow;
     }
   }
 
-  // Metodo per eliminare una scadenza dal database
-  Future <void> eliminaScadenza(String scadenzaId) async{
-    try{
-      // Accede al documento della scadenza tramite il suo ID e lo elimina dalla collezione deadlines
+  // Modifica lo stato di una scadenza impostandolo su 'completata'.
+  Future<void> segnaComeCompletata(String scadenzaId) async {
+    try {
+      await _scadenzeCollection.doc(scadenzaId).update({
+        'status': 'completata',
+      });
+    } catch (e) {
+      debugPrint("Errore durante il completamento della scadenza: $e");
+      rethrow;
+    }
+  }
+
+  // Rimuove una scadenza dal database tramite il suo ID identificativo.
+  // Solleva un'eccezione se la scadenza risulta essere già in stato 'scaduta'.
+  Future<void> eliminaScadenza(String scadenzaId) async {
+    try {
+      // Controllo di sicurezza lato server/servizio prima di procedere all'eliminazione
+      DocumentSnapshot doc = await _scadenzeCollection.doc(scadenzaId).get();
+      if (doc.exists) {
+        final dati = doc.data() as Map<String, dynamic>;
+        if (dati['status'] == 'scaduta') {
+          throw Exception("Procedura non consentita: impossibile eliminare una scadenza scaduta.");
+        }
+      }
+      
       await _scadenzeCollection.doc(scadenzaId).delete();
-    } catch(e){
+    } catch (e) {
       debugPrint("Errore durante l'eliminazione della scadenza: $e");
       rethrow;
     }
   }
 
-  // Metodo per recuperare le scadenze di un cliente specifico dal database
+  // Restituisce lo Stream delle scadenze associate a un determinato cliente e studio.
+  // Esegue un controllo automatico sullo stato temporale delle scadenze estratte.
   Stream<List<Scadenza>> ottieniScadenzePerCliente(String clientId, String studioId) {
-    // Accede alla collection delle scadenze su Firestore, filtra per clientId e le ordina per data di scadenza
-    // Rimane in ascolto in tempo reale di qualsiasi modifica sul database
-    // Trasforma i dati grezzi di Firebase in una lista di istanze della classe Scadenza
     return _scadenzeCollection
-      .where("studioId", isEqualTo: studioId)
-      .where("clientId", isEqualTo: clientId)
-      .orderBy("dueDate")
-      .snapshots()
-      .map((snapshot){
-        return snapshot.docs.map((doc){
-          return Scadenza.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-        }).toList();
-      });
+        .where("studioId", isEqualTo: studioId)
+        .where("clientId", isEqualTo: clientId)
+        .orderBy("dueDate")
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final scadenza = Scadenza.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+        _allineaStatoScadenzaInBackground(scadenza, doc.id);
+        return scadenza;
+      }).toList();
+    });
   }
 
-  // Metodo per ottenere le scadenze per una data specifica (scelta dal calendario)
+  // Restituisce lo Stream delle scadenze programmate per una specifica giornata del calendario.
+  // Esegue un controllo automatico sullo stato temporale delle scadenze estratte.
   Stream<List<Scadenza>> ottieniScadenzePerData(String studioId, DateTime dataScelta) {
     DateTime inizioGiorno = DateTime(dataScelta.year, dataScelta.month, dataScelta.day);
     DateTime fineGiorno = DateTime(dataScelta.year, dataScelta.month, dataScelta.day, 23, 59, 59);
 
     return _scadenzeCollection
-      .where("studioId", isEqualTo: studioId)
-      .where("dueDate", isGreaterThanOrEqualTo: Timestamp.fromDate(inizioGiorno))
-      .where("dueDate", isLessThanOrEqualTo: Timestamp.fromDate(fineGiorno))
-      .orderBy("dueDate")
-      .snapshots()
-      .map((snapshot){
-        return snapshot.docs.map((doc){
-          return Scadenza.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-        }).toList();
-      });
+        .where("studioId", isEqualTo: studioId)
+        .where("dueDate", isGreaterThanOrEqualTo: Timestamp.fromDate(inizioGiorno))
+        .where("dueDate", isLessThanOrEqualTo: Timestamp.fromDate(fineGiorno))
+        .orderBy("dueDate")
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final scadenza = Scadenza.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+        _allineaStatoScadenzaInBackground(scadenza, doc.id);
+        return scadenza;
+      }).toList();
+    });
   }
 
-  // Metodo per ottenere le scadenze odierne
+  // Restituisce lo Stream delle scadenze relative alla giornata odierna.
+  // Esegue un controllo automatico sullo stato temporale delle scadenze estratte.
   Stream<List<Scadenza>> ottieniScadenzeOdierne(String studioId) {
     DateTime oggi = DateTime.now();
     DateTime inizioGiorno = DateTime(oggi.year, oggi.month, oggi.day);
     DateTime fineGiorno = DateTime(oggi.year, oggi.month, oggi.day, 23, 59, 59);
 
-    // Accede alla collection delle scadenze su Firestore, filtra per data di scadenza odierna
-    // Rimane in ascolto in tempo reale di qualsiasi modifica sul database
-    // Trasforma i dati grezzi di Firebase in una lista di istanze della classe Scadenza
     return _scadenzeCollection
-      .where("studioId", isEqualTo: studioId)
-      .where("dueDate", isGreaterThanOrEqualTo: Timestamp.fromDate(inizioGiorno))
-      .where("dueDate", isLessThanOrEqualTo: Timestamp.fromDate(fineGiorno))
-      .orderBy("dueDate")
-      .snapshots()
-      .map((snapshot){
-        return snapshot.docs.map((doc){
-          return Scadenza.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-        }).toList();
+        .where("studioId", isEqualTo: studioId)
+        .where("dueDate", isGreaterThanOrEqualTo: Timestamp.fromDate(inizioGiorno))
+        .where("dueDate", isLessThanOrEqualTo: Timestamp.fromDate(fineGiorno))
+        .orderBy("dueDate")
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final scadenza = Scadenza.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+        _allineaStatoScadenzaInBackground(scadenza, doc.id);
+        return scadenza;
+      }).toList();
+    });
+  }
+
+  // Funzione privata interna per validare e correggere lo stato della scadenza 
+  // nel caso in cui il tempo limite sia superato ma l'entità risulti ancora aperta.
+  void _allineaStatoScadenzaInBackground(Scadenza scadenza, String idDocumento) {
+    if (scadenza.dueDate.isBefore(DateTime.now()) &&
+        scadenza.status != 'scaduta' &&
+        scadenza.status != 'completata') {
+      _scadenzeCollection.doc(idDocumento).update({'status': 'scaduta'}).catchError((errore) {
+        debugPrint("Impossibile aggiornare lo stato di scadenza per il documento $idDocumento: $errore");
       });
+    }
   }
 }

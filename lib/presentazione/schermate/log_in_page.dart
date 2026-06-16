@@ -13,7 +13,28 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _ricordami = false; 
   final Autenticazione _authServizio = Autenticazione();
+
+  @override
+  void initState() {
+    super.initState();
+    _caricaPreferenzeRicordami();
+  }
+
+  /// Recupera le informazioni salvate per precompilare i campi se "Ricordami" è attivo.
+  Future<void> _caricaPreferenzeRicordami() async {
+    bool attivo = await _authServizio.isRicordamiAttivo();
+    if (attivo) {
+      String? emailSalvata = await _authServizio.getEmailSalvata();
+      if (emailSalvata != null) {
+        setState(() {
+          _ricordami = true;
+          _emailController.text = emailSalvata;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -67,7 +88,38 @@ class _LoginPageState extends State<LoginPage> {
                 prefixIcon: Icon(Icons.lock_outline),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: Checkbox(
+                    value: _ricordami,
+                    onChanged: (bool? nuovoValore) {
+                      setState(() {
+                        _ricordami = nuovoValore ?? false;
+                      });
+                    },
+                    activeColor: const Color(0xFF1E3A8A),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _ricordami = !_ricordami;
+                    });
+                  },
+                  child: const Text(
+                    'Ricordami su questo dispositivo',
+                    style: TextStyle(fontSize: 14, color: Colors.black87),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
             
             ElevatedButton(
               onPressed: _isLoading ? null : _eseguiLogin,
@@ -108,7 +160,9 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      await _authServizio.effettuaLogin(email, password);
+      // Passiamo il parametro _ricordami al servizio di autenticazione
+      await _authServizio.effettuaLogin(email, password, ricordami: _ricordami);
+      
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,

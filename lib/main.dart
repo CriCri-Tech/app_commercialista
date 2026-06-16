@@ -1,19 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'presentazione/schermate/welcome_page.dart'; 
+import 'presentazione/schermate/nexa_home_page.dart'; // Importa la tua home principale
 
 void main() async {
+  // 1. Assicura che i widget di Flutter siano pronti prima di eseguire codice asincrono
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 2. Inizializza Firebase
   await Firebase.initializeApp();
-  runApp(const MiaApp());
+  
+  // 3. Controlla lo stato di SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+  final bool ricordamiAttivo = prefs.getBool('ricordami') ?? false;
+  
+  // 4. Verifica se l'utente è attualmente autenticato su Firebase
+  final userCorrente = FirebaseAuth.instance.currentUser;
+
+  // Se "Ricordami" è vero E c'è un utente registrato su Firebase, andiamo alla Home.
+  // Altrimenti mostriamo la WelcomePage.
+  final bool vaiDirettamenteAllaHome = ricordamiAttivo && userCorrente != null;
+
+  runApp(MiaApp(schermataIniziale: vaiDirettamenteAllaHome ? const NexaHomePage() : const WelcomePage()));
 }
 
 class MiaApp extends StatelessWidget {
-  const MiaApp({super.key});
+  final Widget schermataIniziale;
+
+  // Passiamo la schermata decisa nel main attraverso il costruttore
+  const MiaApp({super.key, required this.schermataIniziale});
 
   @override
   Widget build(BuildContext context) {
-    // Definiamo il colore brand principale
     const Color nexaBlue = Color(0xFF1E3A8A);
 
     return MaterialApp(
@@ -22,9 +42,8 @@ class MiaApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: nexaBlue),
         useMaterial3: true,
-        scaffoldBackgroundColor: Colors.grey.shade50, // Uno sfondo leggermente grigio fa risaltare le card bianche
+        scaffoldBackgroundColor: Colors.grey.shade50, 
         
-        // Stile globale per la barra superiore (AppBar)
         appBarTheme: const AppBarTheme(
           backgroundColor: nexaBlue,
           foregroundColor: Colors.white,
@@ -33,7 +52,6 @@ class MiaApp extends StatelessWidget {
           iconTheme: IconThemeData(color: Colors.white),
         ),
 
-        // Stile globale per i campi di testo (TextField / TextFormField)
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8.0),
@@ -45,19 +63,17 @@ class MiaApp extends StatelessWidget {
           prefixIconColor: nexaBlue.withOpacity(0.7),
         ),
 
-        // Stile globale per i bottoni primari (ElevatedButton)
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: nexaBlue,
             foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(55), // Altezza standard
+            minimumSize: const Size.fromHeight(55), 
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
         ),
 
-        // Stile globale per i bottoni secondari (OutlinedButton)
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             foregroundColor: nexaBlue,
@@ -69,7 +85,8 @@ class MiaApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const WelcomePage(), 
+      // Applica la schermata dinamica calcolata all'avvio
+      home: schermataIniziale, 
     );
   }
 }

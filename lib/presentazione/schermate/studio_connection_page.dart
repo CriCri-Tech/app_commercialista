@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../servizi/gestione_studio.dart'; 
 import 'dashboard_page.dart'; 
 
@@ -23,7 +24,29 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
   final TextEditingController _codiceInvitoController = TextEditingController();
   
   bool _isLoading = false; 
+  bool _ricordami = false; 
   final GestioneStudioService _studioService = GestioneStudioService(); 
+
+  @override
+  void initState() {
+    super.initState();
+    _caricaPreferenzeRicordami();
+  }
+
+  // Recupera il codice invito salvato se la spunta era attiva
+  Future<void> _caricaPreferenzeRicordami() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool attivo = prefs.getBool('ricordami_codice_studio') ?? false;
+    if (attivo) {
+      String? codiceSalvato = prefs.getString('codice_invito_salvato');
+      if (codiceSalvato != null) {
+        setState(() {
+          _ricordami = true;
+          _codiceInvitoController.text = codiceSalvato;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -118,6 +141,14 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
 
         await _studioService.accediAStudio(codiceInvito, user.uid);
 
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('ricordami_codice_studio', _ricordami);
+        if (_ricordami) {
+          await prefs.setString('codice_invito_salvato', codiceInvito);
+        } else {
+          await prefs.remove('codice_invito_salvato');
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -151,7 +182,6 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Inseriamo il DefaultTabController per gestire la selezione "Crea" o "Accedi"
     return DefaultTabController(
       length: 2,
       child: Container(
@@ -166,7 +196,6 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            // Barra di selezione delle schede (Tabs)
             TabBar(
               labelColor: theme.colorScheme.primary,
               unselectedLabelColor: Colors.grey,
@@ -177,7 +206,6 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
               ],
             ),
             
-            // Corpo principale swippabile basato sulla scheda attiva
             Expanded(
               child: TabBarView(
                 children: [
@@ -285,13 +313,13 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
                           TextFormField(
                             controller: _codiceInvitoController,
                             enabled: !_isLoading,
-                            maxLength: 6, // Limite inserimento a 6 caratteri
-                            textCapitalization: TextCapitalization.characters, // Forza la tastiera in maiuscolo
+                            maxLength: 6, 
+                            textCapitalization: TextCapitalization.characters, 
                             decoration: const InputDecoration(
                               labelText: 'Codice Invito *',
                               prefixIcon: Icon(Icons.vpn_key),
                               hintText: 'Es. AB12XY',
-                              counterText: "", // Nasconde il contatore visivo
+                              counterText: "", 
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
@@ -303,6 +331,38 @@ class _AssegnaStudioPageState extends State<AssegnaStudioPage> {
                               return null;
                             },
                           ),
+                          const SizedBox(height: 16),
+                          
+                          Row(
+                            children: [
+                              SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: Checkbox(
+                                  value: _ricordami,
+                                  onChanged: (bool? nuovoValore) {
+                                    setState(() {
+                                      _ricordami = nuovoValore ?? false;
+                                    });
+                                  },
+                                  activeColor: theme.colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _ricordami = !_ricordami;
+                                  });
+                                },
+                                child: const Text(
+                                  'Ricorda questo codice',
+                                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                                ),
+                              ),
+                            ],
+                          ),
+                          
                           const Spacer(),
                           _isLoading 
                             ? const Center(child: CircularProgressIndicator())

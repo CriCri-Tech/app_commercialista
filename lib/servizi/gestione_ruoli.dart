@@ -116,7 +116,7 @@ class GestioneRuoli {
     return nuovoCodice;
   }
 
-  /// Funzione di supporto alfanumerica per la generazione casuale del codice
+  // Funzione di supporto alfanumerica per la generazione casuale del codice
   String _generaCodiceInvito() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     Random rnd = Random();

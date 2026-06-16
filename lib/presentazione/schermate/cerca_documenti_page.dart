@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../modelli/documento.dart'; // Aggiusta il percorso del modello se necessario
-import '../../servizi/gestione_documenti.dart'; // Aggiusta il percorso del servizio se necessario
+import '../../modelli/documento.dart'; 
+import '../../servizi/gestione_documenti.dart'; 
 
 class CercaDocumentiPage extends StatefulWidget {
   final String studioId;
@@ -170,8 +170,6 @@ class _CercaDocumentiPageState extends State<CercaDocumentiPage> {
                             IconButton(
                               icon: const Icon(Icons.open_in_new, color: Colors.blue),
                               onPressed: () {
-                                // TODO: Puoi integrare qui un pacchetto come 'url_launcher' 
-                                // per aprire documento.fileUrl direttamente nel browser del telefono.
                                 debugPrint("Apertura URL: ${documento.fileUrl}");
                               },
                             ),

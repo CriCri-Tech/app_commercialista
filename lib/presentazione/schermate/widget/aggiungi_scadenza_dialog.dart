@@ -7,7 +7,7 @@ import 'selezione_cliente_dialog.dart';
 Future<void> mostraDialogAggiungiScadenza({
   required BuildContext context,
   required String studioId,
-  required String utenteId, // <-- AGGIUNTO
+  required String utenteId, 
   required ServizioScadenze servizioScadenze,
   required ServizioClienti servizioClienti,
 }) async {
