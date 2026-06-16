@@ -62,6 +62,24 @@ class ServizioScadenze{
       });
   }
 
+  // Metodo per ottenere le scadenze per una data specifica (scelta dal calendario)
+  Stream<List<Scadenza>> ottieniScadenzePerData(String studioId, DateTime dataScelta) {
+    DateTime inizioGiorno = DateTime(dataScelta.year, dataScelta.month, dataScelta.day);
+    DateTime fineGiorno = DateTime(dataScelta.year, dataScelta.month, dataScelta.day, 23, 59, 59);
+
+    return _scadenzeCollection
+      .where("studioId", isEqualTo: studioId)
+      .where("dueDate", isGreaterThanOrEqualTo: Timestamp.fromDate(inizioGiorno))
+      .where("dueDate", isLessThanOrEqualTo: Timestamp.fromDate(fineGiorno))
+      .orderBy("dueDate")
+      .snapshots()
+      .map((snapshot){
+        return snapshot.docs.map((doc){
+          return Scadenza.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+        }).toList();
+      });
+  }
+
   // Metodo per ottenere le scadenze odierne
   Stream<List<Scadenza>> ottieniScadenzeOdierne(String studioId) {
     DateTime oggi = DateTime.now();
