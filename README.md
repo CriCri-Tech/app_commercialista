@@ -27,14 +27,54 @@ L'applicazione sfrutta l'ecosistema Firebase. Per consentire il corretto funzion
 * **Per iOS:** Inserisci il file `GoogleService-Info.plist` all'interno della directory `ios/Runner/`.
 
 ### 4. Avviare l'Applicazione
-Collega un dispositivo fisico (con debug USB attivo) o avvia un emulatore/simulatore, quindi esegui:
-```
+
+#### Esecuzione in sviluppo
+
+```bash
+# Esegui su dispositivo/emulatore connesso
 flutter run
-```
-Per compilare ed eseguire il codice. Per compilare solamente esegui:
-```
+
+# Forza una piattaforma specifica
+flutter run -d android    # Solo Android
+flutter run -d ios        # Solo iOS (macOS richiesto)
+flutter run -d chrome     # Solo Web
+flutter run -d windows    # Solo Windows
+flutter run -d macos      # Solo macOS
+flutter run -d linux      # Solo Linux
+
+# Verifica la correttezza del codice (analisi statica)
 flutter analyze
 ```
+
+#### Build per produzione
+
+```bash
+# Android
+flutter build apk --release                # APK singolo
+flutter build appbundle --release          # App Bundle (Play Store)
+
+# iOS (richiede Xcode su macOS)
+flutter build ios --release
+
+# Web
+flutter build web --release
+
+# Desktop
+flutter build windows --release            # Windows
+flutter build macos --release              # macOS
+flutter build linux --release              # Linux
+```
+
+### 5. Requisiti per piattaforma
+
+| Piattaforma | SDK richiesto | Note |
+|---|---|---|
+| **Android** | Android SDK (API 21+) | Emulatore Android o dispositivo fisico con debug USB |
+| **iOS** | Xcode 16+ / CocoaPods | Solo su macOS; necessario provisioning profile per device fisico |
+| **Web** | Chrome / Edge | `flutter build web` e deploy su qualsiasi host statico |
+| **Windows** | Windows 10+ / Visual Studio | Build con toolchain MSVC |
+| **macOS** | macOS 13+ / Xcode 16+ | Richiede Mac con chip Apple Silicon o Intel |
+| **Linux** | GTK+ 3.0 / cmake / ninja | Build su qualsiasi distro Linux con toolchain standard |
 
 ---
 
@@ -92,13 +132,98 @@ flutter analyze
 * **US-03:** Come utente voglio caricare documenti associandoli a un cliente.
 * **US-04:** Come amministratore voglio gestire gli utenti.
 
-### 7. Flussi UI Principali
-* **✓ FLOW 1 - Login:** Splash -> Login -> Verifica credenziali -> Dashboard.
-* **✓ FLOW 2 - Ricerca Cliente:** Dashboard -> Clienti -> Ricerca -> Lista risultati -> Scheda Cliente.
-* **✓ FLOW 3 - Nuova Scadenza:** Scheda Cliente -> Scadenze -> Nuova Scadenza -> Salva -> Notifica pianificata.
-* **✓ FLOW 4 - Upload Documento:** Scheda Cliente -> Documenti -> Carica Documento -> Storage -> Conferma.
-* **FLOW 5 - Gestione Task:** Scheda Cliente -> Attività -> Nuova Attività -> Assegna -> Notifica.
-* **✓ FLOW 6 - Dashboard Giornaliera:** Login -> Dashboard -> Scadenze odierne -> Dettaglio.
+### 7. Mappa di Navigazione e Flussi UI
+
+#### Diagramma di navigazione completo
+
+```
+                    ┌──────────────────────────────────────────────────┐
+                    │                  WelcomePage                     │
+                    │              Benvenuto. Inizia da qui.           │
+                    └──────┬──────────────────────┬───────────────────┘
+                           │                      │
+                    Accedi │                      │ Registrati
+                           ▼                      ▼
+                    ┌──────────┐          ┌──────────────┐
+                    │ LoginPage│          │Registrazione │
+                    │ (RF-01)  │          │Page (RF-00)  │
+                    └────┬─────┘          └──────┬───────┘
+                         │                       │
+                         └───────┬───────────────┘
+                                 │ Login/Registrazione ok
+                                 ▼
+                    ┌──────────────────────┐
+                    │    NexaHomePage       │
+                    │ Assegna Studio / Menu │
+                    └──────┬───────────────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+        Crea Studio   Accedi a    Profilo /
+              │        Studio      Logout
+              ▼            ▼
+     ┌────────────┐ ┌──────────────┐
+     │ Dashboard  │ │ Dashboard    │
+     │  (Admin)   │ │  (User)      │
+     └─────┬──────┘ └──────┬───────┘
+           │               │
+           ▼               ▼
+     ┌─────────────────────────────────────┐
+     │          DashboardPage               │
+     │  ┌──────────────────────────────┐   │
+     │  │  Calendario orizzontale      │   │
+     │  │  (365 giorni, scorrevole)    │   │
+     │  ├──────────────────────────────┤   │
+     │  │  Scadenze del giorno         │   │
+     │  │  [Aggiungi] [Dettagli] [✓]  │   │
+     │  ├──────────────────────────────┤   │
+     │  │  Clienti attivi             │   │
+     │  │  [Info] [Documenti]          │   │
+     │  └──────────────────────────────┘   │
+     └─────────────────────────────────────┘
+           │
+           │ Menu laterale (Drawer)
+           ├──────────────────────────────────┐
+           │                                  │
+           ▼                                  ▼
+     ┌──────────────┐              ┌────────────────────┐
+     │Anagrafica    │              │  Cerca Documenti   │
+     │Clienti Page  │              │  Page               │
+     │(RF-06)       │              │  (RF-08)            │
+     │[Cerca]       │              │  [Filtra per        │
+     │[Modifica]    │              │   nome azienda]     │
+     │[Elimina]     │              │  [Apri URL]         │
+     └──────┬───────┘              │  [Elimina]          │
+            │                      └────────────────────┘
+            ▼
+     ┌──────────────────┐
+     │ DocumentiCliente │
+     │ Page             │
+     │ [Lista file]     │
+     │ [Apri PDF]       │
+     └──────────────────┘
+```
+
+#### Flussi UI dettagliati
+
+| # | Flusso | Stato | Percorso |
+|---|---|---|---|
+| **1** | **Login/Accesso** | ✓ | `WelcomePage → LoginPage → NexaHomePage → DashboardPage` |
+| **2** | **Registrazione** | ✓ | `WelcomePage → RegistrazionePage → NexaHomePage → DashboardPage` |
+| **3** | **Creazione Studio** | ✓ | `NexaHomePage → Tab "Crea Studio" → Inserisci Nome+P.IVA → Codice invito generato → DashboardPage` |
+| **4** | **Accesso a Studio** | ✓ | `NexaHomePage → Tab "Accedi a Studio" → Inserisci codice 6 cifre → DashboardPage` |
+| **5** | **Dashboard giornaliera** | ✓ | `Login → DashboardPage → Calendario → Seleziona data → Scadenze del giorno` |
+| **6** | **Aggiungi Scadenza** | ✓ | `DashboardPage → [+] → Compila tipo/data/assegnatario → Salva → Notifica` |
+| **7** | **Completa Scadenza** | ✓ | `DashboardPage → [✓] sul task → Conferma → Stato "completata" (testo sbarrato)` |
+| **8** | **Ricerca Clienti** | ✓ | `DashboardPage → Drawer → "Cerca e Modifica Clienti" → Barra ricerca → Lista filtrata → [Modifica/Elimina]` |
+| **9** | **Aggiungi Cliente** | ✓ | `DashboardPage → Drawer → "Aggiungi Cliente" → Compila form → Salva` |
+| **10** | **Documenti Cliente** | ✓ | `DashboardPage → Cliente → [📁 Documenti] → Lista file → Tap per apri PDF` |
+| **11** | **Upload Documento** | ✓ | `DashboardPage → Drawer → "Scansiona Documenti" → Scanner → Associa a cliente → Upload` |
+| **12** | **Scansione Biglietto** | ✓ | `(da aggiungere) → Scatta foto → OCR → Precompila form cliente → Salva` |
+| **13** | **Profilo Utente** | ✓ | `Drawer → "Profilo" → Modifica dati / Cambia password / Vedi codice invito studio` |
+| **14** | **Logout** | ✓ | `Drawer → "Disconnettiti" → Conferma → WelcomePage` |
+| **15** | **Gestione Task** | ✗ | `(da implementare) → Crea/Assegna/Completa attività interne` |
+| **16** | **Gestione Utenti (Admin)** | ✗ | `(da implementare) → Admin → Cambia ruoli / Kick / Ban utenti` |
 
 ### 8. Struttura dei Wireframe Testuali
 * **✓ Dashboard:** Mostra un riepilogo con Clienti Attivi, Scadenze Oggi, Task Aperti e Documenti Recenti.
